@@ -1,10 +1,11 @@
-Package: CustomFuncs
-Title: What the Package Does (one line, title case)
+Package: Ecohydro
+Title:  Functions for Granier-style thermal disspiation sap flux calculations and a number of helper functions used in ecological studies.
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Authors@R: person("Joe", "Shannon", email = "josephshannon@outlook.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
 Depends:
     R (>= 3.2.2)
 License: What license is it under?
 LazyData: true
 RoxygenNote: 5.0.1
+Imports: data.table

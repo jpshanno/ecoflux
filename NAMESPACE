@@ -3,6 +3,7 @@
 export(Circular)
 export(SEy)
 export(blank_day)
+export(blank_seq)
 export(fluxmod)
 export(pataki_flow)
 export(pataki_var)

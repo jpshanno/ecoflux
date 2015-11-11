@@ -7,8 +7,8 @@
 #' @examples
 #' blank_day()
 blank_day <- function(timestep = NULL){
-  timestep_sec = 60 * timestep
-  sort(as.ITime(seq(from = as.ITime("00:00:00"), to = as.ITime("23:45:00"), by=timestep_sec), origin = "1970-01-01 00:00:00"))
+  timestep_seconds = 60 * timestep
+  sort(as.ITime(seq(from = as.ITime("00:00:00"), to = as.ITime("23:45:00"), by=timestep_seconds), origin = "1970-01-01 00:00:00"))
 }
 
 #' Calculate the area of a circle
@@ -39,3 +39,47 @@ SEy <- function(model, Xes) {
   s <- sqrt((sum(Ey^2))/(n-2))
   Sx <- sum((Ex)^2,na.rm=T)
   s * sqrt(1+(1/n)+(Ex^2/Sx))}
+
+
+#' Create blank time sequence for each unique subject
+#'
+#' Creates a data table with subject, date (IDate), and time (ITime) columns over
+#' a specified range of days with a given time step
+#' @param from a start date as a character string ("yyyy-mm-dd") or an IDate object
+#' @param to a start date as a character string ("yyyy-mm-dd") or an IDate object
+#' @param subjects a character vector of subject IDs
+#' @param timestep the desired time step in minutes
+#' @export
+#' @examples
+#' blank_seq()
+
+blank_seq <- function(from = NULL, to = NULL, subjects = NULL, timestep = NULL){
+
+  dates <- seq(from = as.IDate(from), to = as.IDate(to), by =1)
+  times <- blank_day(timestep = timestep)
+  
+  n_subs <- length(subjects)
+  n_dates <- length(dates)
+  n_times <- length(times)
+  
+  full_sequence <- 
+    data.table(
+      subject = 
+        rep(
+          subjects, 
+          each = n_dates * n_times),
+      idateA = 
+        rep(
+          dates,
+          each = n_times,
+          times = n_subs),
+      itimeA = 
+        rep(
+          times,
+          times = n_subs * n_dates)
+    )
+  
+  setkey(full_sequence, subject, idateA, itimeA)
+  
+  return(full_sequence)
+  }
