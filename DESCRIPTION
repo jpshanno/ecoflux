@@ -8,4 +8,7 @@ Depends:
 License: What license is it under?
 LazyData: true
 RoxygenNote: 5.0.1
-Imports: data.table
+Imports: 
+    data.table,
+    dplyr,
+    readr

@@ -1,3 +1,6 @@
+
+# Blank Day ---------------------------------------------------------------
+
 #' Creates a ITime vector spanning a single day with a custom time step
 #'
 #' #' Creates a ITime vector spanning a single day with a custom time step
@@ -8,7 +11,7 @@
 #' blank_day()
 blank_day <- function(timestep = NULL){
   timestep_seconds = 60 * timestep
-  sort(as.ITime(seq(from = as.ITime("00:00:00"), to = as.ITime("23:45:00"), by=timestep_seconds), origin = "1970-01-01 00:00:00"))
+  sort(data.table::as.ITime(seq(from = data.table::as.ITime("00:00:00"), to = data.table::as.ITime("23:59:59"), by=timestep_seconds), origin = "1970-01-01 00:00:00"))
 }
 
 #' Calculate the area of a circle
@@ -21,7 +24,7 @@ blank_day <- function(timestep = NULL){
 #' Circular()
 Circular<-function(r) pi*r^2
 
-
+# Predicted Standard Error ------------------------------------------------
 #' Predicted Standard Error
 #'
 #' Calcualtes the standard error of predicted y-values
@@ -40,7 +43,7 @@ SEy <- function(model, Xes) {
   Sx <- sum((Ex)^2,na.rm=T)
   s * sqrt(1+(1/n)+(Ex^2/Sx))}
 
-
+# Blank Sequence ----------------------------------------------------------
 #' Create blank time sequence for each unique subject
 #'
 #' Creates a data table with subject, date (IDate), and time (ITime) columns over
