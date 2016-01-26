@@ -1,5 +1,5 @@
-Package: Ecohydro
-Title:  Functions for Granier-style thermal disspiation sap flux calculations and a number of helper functions used in ecological studies.
+Package: ecoFlux
+Title:  Functions for ecological flux studies including sap flux and soil/stem C efflux.
 Version: 0.0.0.9000
 Authors@R: person("Joe", "Shannon", email = "josephshannon@outlook.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
@@ -11,4 +11,9 @@ RoxygenNote: 5.0.1
 Imports: 
     data.table,
     dplyr,
-    readr
+    DT,
+    ggplot2,
+    miniUI,
+    readr,
+    shiny,
+    tidyr

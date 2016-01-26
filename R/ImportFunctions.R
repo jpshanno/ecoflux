@@ -19,7 +19,8 @@ read_rdb <- function(file){
                  sep='\t', 
                  colClasses=c('character'), 
                  fill = TRUE,  
-                 comment.char="#")),
+                 comment.char="#",
+                 check.names = FALSE)),
     2:n())
 } 
 
