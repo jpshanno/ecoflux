@@ -5,6 +5,26 @@
 #' fit linear regressions to each sample's data. It is specifically designed for
 #' soil and stem efflux. It will work with any type of data that has a unique
 #' sample ID and dependent/independent variables.
+#' Select points to remove from the data by clicking on them or remove multiple
+#' points by clicking and dragging a box around the points you wish to remove.
+#' Please keep in mind that this step is not for removing data you view as
+#' 'outliers'. Points should only be removed due to equipment/sampling errors or
+#' to remove efflux 'ramp up' at the beginning of sampling. 
+#' After you are finished with a sample press 'Save & Next' to advance to the
+#' next sample. This will also save information about the model fit and update
+#' the output data, removing the data you selected. You can view any sample
+#' using the dropdown mean or return to the previous plot with the 'Previous'
+#' button (navigating this way will not save any of your selections). Resetting
+#' the probe will delete the saved regression information and add all of the
+#' sample points back to your plot and the output data.
+#' See the \href{https://joeshannon.shinyapps.io/efflux}{efflux web app}
+#' for example datasets
+#' 
+#' @return A list consiting of a dataframe of the fitted regressions
+#'   ("regressions"), a dataframe of the points removed ("removedPoints"), a
+#'   dataframe of samples that were editted (processedData), a dataframe of the
+#'   output data (input data merged with any changes) ("finalData"), a list of
+#'   the final plots by sample ("plots")
 #' 
 #' @param input.data A dataset containing a response variable and one or more
 #'   columns that can be used to create a unique ID
