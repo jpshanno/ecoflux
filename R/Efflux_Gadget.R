@@ -356,6 +356,6 @@ efflux <- function(input.data, xvar, yvar, idvar){
         )
       )
     )
-  shiny::runGadget(ui, server, viewer = shiny::dialogViewer("efflux"))
+  shiny::runGadget(ui, server, viewer = shiny::paneViewer("efflux"))
 }
 
