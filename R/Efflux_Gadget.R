@@ -335,7 +335,7 @@ efflux <- function(input.data, xvar, yvar, idvar){
                              # verbatimTextOutput("test"),
                              miniUI::miniContentPanel(
                                shiny::plotOutput("plotConc",
-                                                 # click = "plot_click",
+                                                 click = "plot_click",
                                                  dblclick = "plot_dblclick",
                                                  hover = "plot_hover",
                                                  # brush = "plot_brush",
@@ -376,6 +376,6 @@ efflux <- function(input.data, xvar, yvar, idvar){
         )
       )
     )
-  shiny::runGadget(ui, server, viewer = shiny::paneViewer("efflux"))
+  shiny::runGadget(ui, server)
 }
 
