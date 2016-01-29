@@ -36,27 +36,130 @@
 #' @examples
 #' efflux()
 
-efflux <- function(input.data, xvar, yvar, idvar){
+efflux <- function(input.data){
+  
+  time <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  
+  temporaryDirectory <- 
+    paste("./Temp", 
+          format(Sys.time(), "%Y%m%d_%H%M%S"), 
+          sep = "_")
+  
+  dir.create(temporaryDirectory)
   
   server  <-  function(input, output, session) {
     
     
+    # Reactives ---------------------------------------------------------------
+    
+    # Load selected file
+    Data <- shiny::reactive({
+      return(input.data)
+    })
+    
+    # This reactive is the workhorse of the data processing. It selects data from 
+    # only the selected sample, fits a model, and creates a plot. The data, model,
+    # and plot are all returned.
+    Plot <- shiny::reactive({
+      Data <- 
+        data$plotting
+      
+      xCoord <- min(Data[[input$X]], na.rm = T)
+      yDiff <- max(Data[[input$Y]], na.rm = T) - min(Data[[input$Y]], na.rm = T)
+      yCoord <- max(Data[[input$Y]], na.rm = T) - 0.05*yDiff
+      
+      
+      # Fit basic linear model with only unselected rows
+      if(nrow(data$plotting) == 0){
+        Model <- NULL
+      } else {
+        Model <- lm(get(input$Y) ~ get(input$X), data = Data)}
+      
+      # Build plots with points and model
+      if(nrow(data$plotting) != 0){
+        Plot <- 
+          ggplot2::ggplot(data = Data,
+                          ggplot2::aes(x = get(input$X),
+                     y = get(input$Y))) +
+          ggplot2::xlab(input$X) +
+          ggplot2::ylab(input$Y) +
+          ggplot2::geom_point(color = "darkgray") +
+          ggplot2::geom_abline(slope = coef(Model)[2],
+                      intercept = coef(Model)[1],
+                      color = "black") +
+          ggplot2::annotate("text", 
+                   label = paste("Slope =", 
+                                 round(coef(Model)[2],2), 
+                                 sep = " "), 
+                   x = xCoord, 
+                   y = yCoord, 
+                   hjust = "inward") +
+          ggplot2::theme_bw()
+        if(input$zeroLimit == T){
+          upperY <- ggplot2::ggplot_build(Plot)$panel$ranges[[1]]$y.range[2]
+          Plot <- Plot + ggplot2::coord_cartesian(ylim = c(0, upperY))
+        }
+      } else {
+        Plot <- 
+          ggplot2::ggplot(ggplot2::aes(x = get(input$X),
+                     y = get(input$Y)),
+                 data =  Data) +
+          ggplot2::xlab(input$X) +
+          ggplot2::ylab(input$Y) +
+          ggplot2::geom_blank()
+      }
+      
+      # Return all function values
+      info <- list(Model = Model, 
+                   Data = Data, 
+                   Plot = Plot)
+      return(info)
+    })
+    
+    # Translate the selected ID to an index number of the available IDs for subsetting
+    # IndexID <- shiny::reactive(grep(input$ID, workingValues$allIDs))
+    
+    
+    
     # Reactive Values ---------------------------------------------------------
+    # Create value that can be updated and used on the server
+    # 
+    # workingValues <- 
+    #   shiny::reactiveValues(workingData = NULL,
+    #                  allIDs = list(),
+    #                  sampledIDs = list(),
+    #                  outputData = NULL,
+    #                  keepRows = list(),
+    #                  fittedEfflux = tbl_df(data.frame(
+    #                    sampleID = character(), 
+    #                    nPointsUsed = numeric(),
+    #                    intercept = numeric(), 
+    #                    slope = numeric(), 
+    #                    adjustedRSquared = numeric(), 
+    #                    residualStandardError = numeric(), 
+    #                    degreesFreedom = numeric(), 
+    #                    fStatistic = numeric())),
+    #                  processedPlots = list())
+    
+    displayConditions <-
+      shiny::reactiveValues(
+        idNotSelected = TRUE,
+        variablesNotSelected = TRUE)
     
     data <- shiny::reactiveValues(
-      input = 
-        input.data  %>%
-        tidyr::unite_("outputSampleID", idvar, sep = "_") %>% 
-        dplyr::arrange_("outputSampleID"),
-      editted = 
-        input.data  %>%
-        tidyr::unite_("outputSampleID", idvar, sep = "_") %>% 
-        dplyr::arrange_("outputSampleID"),
+      input = NULL,
+      
+      editted = NULL,
+      
+      unprocessed = NULL,
+      
+      removed = NULL,
+      
       plotting = 
         NULL,
       regressionInfo = 
-        dplyr::tbl_df(data.frame(
-          outputSampleID = character(), 
+        tbl_df(data.frame(
+          sampleID = character(), 
           nPointsUsed = numeric(),
           intercept = numeric(), 
           slope = numeric(), 
@@ -80,109 +183,123 @@ efflux <- function(input.data, xvar, yvar, idvar){
     )
     
     
-    # Reactives ---------------------------------------------------------------
+    # General Observers ------
     
-    # This reactive is the workhorse of the data processing. It selects data from 
-    # only the selected sample, fits a model, and creates a plot. The data, model,
-    # and plot are all returned.
+    # Populate the drop down menus with the column names from the uploaded data
+    shiny::observe({
+      shiny::updateSelectizeInput(session,
+                           inputId = "X",
+                           choices = c(Choose = "", 
+                                       names(Data())[sapply(Data(),is.numeric)]))
+      
+      shiny::updateSelectizeInput(session,
+                           inputId = "Y",
+                           choices = c(Choose = "", 
+                                       names(Data())[sapply(Data(),is.numeric)]))
+      
+      shiny::updateSelectizeInput(session,
+                           inputId = "UniqueID",
+                           choices = c(Choose = "", 
+                                       names(Data())))
+    })
     
-    PlotData <- shiny::reactive({
-      # If no ID variable has been selected display the plot with all the data
-      Data <- 
-        data$plotting
-      
-      # Fit basic linear model with only unselected rows
-      if(nrow(data$plotting) == 0){
-        Model <- NULL
+    # Flag whether or not variables have been selected
+    shiny::observe({
+      if(!is.null(input$X) && 
+         !is.null(input$Y) && 
+         input$X != "" && 
+         input$Y != ""){
+        displayConditions$variablesNotSelected <- FALSE
       } else {
-        Model <- lm(get(yvar) ~ get(xvar), data = Data)}
-      
-      # Build plots with points and model
-      if(nrow(data$plotting) != 0){
-        Plot <- 
-          ggplot2::ggplot(data =  Data) +
-          ggplot2::xlab(xvar) +
-          ggplot2::ylab(yvar) +
-          ggplot2::ggtitle(sample$name) +
-          ggplot2::geom_point(ggplot2::aes(x = get(xvar),
-                                           y = get(yvar)),
-                              color = "darkgray") +
-          ggplot2::geom_abline(slope = coef(Model)[2],
-                               intercept = coef(Model)[1],
-                               color = "black") +
-          ggplot2::theme_bw()
-      } else {
-        Plot <- 
-          ggplot2::ggplot(ggplot2::aes(x = get(xvar),
-                                       y = get(yvar)),
-                          data =  Data) +
-          ggplot2::xlab(xvar) +
-          ggplot2::ylab(yvar) +
-          ggplot2::ggtitle(sample$name) +
-          ggplot2::geom_blank()
+        displayConditions$variablesNotSelected <- TRUE
       }
       
-      # Return all function values
-      info <- list(Model = Model, 
-                   Data = Data, 
-                   Plot = Plot)
-      return(info)
+      if(!is.null(input$UniqueID) && 
+         input$UniqueID != ""){
+        displayConditions$idNotSelected <- FALSE
+      } else {
+        displayConditions$idNotSelected <- TRUE
+      }
     })
     
     
-    
-    
-    # General Observers ----
-    
+    # Set working values when ID is selcted
     shiny::observe({
+      if(displayConditions$idNotSelected){return(NULL)}
+      # Create a unique ID using the columns selected for ID
+      data$input <-
+        Data() %>%
+        tidyr::unite_("sampleID", unlist(input$UniqueID), sep = "_") %>% 
+        arrange_("sampleID")
+      
+      data$editted <-
+        Data() %>%
+        tidyr::unite_("sampleID", unlist(input$UniqueID), sep = "_") %>%
+        slice(0)
+      
+      # Generate a string of all the sample IDs
       IDs$all <- 
         data$input  %>%
-        dplyr::distinct(outputSampleID) %>%
-        dplyr::arrange(outputSampleID) %>% 
-        .$outputSampleID
-      sample$name <- IDs$all[sample$index]
+        distinct(sampleID) %>%
+        arrange(sampleID) %>% 
+        .$sampleID
     })
     
     shiny::observe({
+      if(displayConditions$idNotSelected){return(NULL)}
+      sample$name <- IDs$all[sample$index]})    
+    
+    
+    # Generate a list of logical vectors named with each ID. This is used in
+    # the plotting to indicate which rows are selected
+    # for(SAMPLE in workingValues$allIDs){
+    #   workingValues$keepRows[[SAMPLE]] <- 
+    #     rep(TRUE, 
+    #         nrow(
+    #           filter(
+    #             workingValues$workingData, sampleID == SAMPLE)))
+    # }
+    
+    shiny::observe({
+      if(displayConditions$idNotSelected){return(NULL)}
       if(sample$name %in% IDs$processed){
         data$plotting <- 
           data$editted %>% 
-          dplyr::filter(outputSampleID == sample$name)
+          filter(sampleID == sample$name)
       } else {
         data$plotting <- 
           data$input %>% 
-          dplyr::filter(outputSampleID == sample$name)
+          filter(sampleID == sample$name)
       }
     })
     
+    
+    
     # Event Observers -----
     
-    
-    shiny::observeEvent(input$done, {
-      returnValue <- list(
-        # efflux = data$regressionInfo %>% 
-        #   select(outputSampleID, slope) %>% 
-        #   rename(`Efflux (ppm)` = slope),
-        regressions = data$regressionInfo,
-        removedPoints = dplyr::anti_join(data$input, data$editted),
-        processedData = data$editted %>% 
-          dplyr::filter(outputSampleID %in% IDs$processed),
-        finalData = data$editted,
-        plots = data$plots
+    # End app and return data
+    shiny::observeEvent(input$done,{
+      shiny::stopApp(
+        returnValue = list(
+          processedSamples = data$editted,
+          unproccessedSamples = data$input %>%
+            filter(!(sampleID %in% IDs$processed)),
+          removedPoints = anti_join(data$input, data$editted) %>% 
+            filter(sampleID %in% IDs$processed),
+          modelFits = data$regressionInfo,
+          plots = data$plots
+        )
       )
-      shiny::stopApp(returnValue)
     })
     
-    # Run on click on the plot Return a data frame of points with a column
-    # (selected_) indicating which point was selected. Max points ensures that
-    # only the closest point is returned
+    # Run on click on the plot
     shiny::observeEvent(input$plot_click, {
-      data$plotting <- dplyr::anti_join(data$plotting, 
-                                        shiny::nearPoints(PlotData()$Data, 
-                                                          input$plot_click,
-                                                          xvar = xvar,
-                                                          yvar = yvar,
-                                                          maxpoints = 1))
+      data$plotting <- anti_join(data$plotting, 
+                                 shiny::nearPoints(Plot()$Data, 
+                                            input$plot_click,
+                                            xvar = input$X,
+                                            yvar = input$Y,
+                                            maxpoints = 1))
       # if(nrow(data$plotting) == 0){sample$index <- sample$index + 1}
     })
     
@@ -190,17 +307,18 @@ efflux <- function(input.data, xvar, yvar, idvar){
     # column (selected_) indicating which point was selected. Max points ensures
     # that only the closest point is returned
     shiny::observeEvent(input$plot_brush, {
-      data$plotting <- dplyr::anti_join(data$plotting, 
-                                        shiny::brushedPoints(PlotData()$Data,
-                                                             input$plot_brush, 
-                                                             xvar = xvar,
-                                                             yvar = yvar))
+      data$plotting <- anti_join(data$plotting, 
+                                 shiny::brushedPoints(Plot()$Data,
+                                               input$plot_brush, 
+                                               xvar = input$X,
+                                               yvar = input$Y))
       # if(nrow(data$plotting) == 0){sample$index <- sample$index + 1}
     })
     
-    shiny::observeEvent(input$plot_dblclick, 
-                        {data$plotting <- 
-                          dplyr::filter(data$plotting, is.na(outputSampleID))})
+    shiny::observeEvent(input$plot_dblclick, {
+      data$plotting <- 
+        filter(data$plotting, is.na(sampleID))
+    })
     
     # Runs when you press Save & Next
     shiny::observeEvent(input$nextID,{
@@ -210,50 +328,97 @@ efflux <- function(input.data, xvar, yvar, idvar){
       
       # Add the sample plot to a list of generated plots - overwrites the plot as
       # data is selected and removed
-      data$plots[[sample$name]] <- PlotData()$Plot
+      data$plots[[sample$name]] <- Plot()$Plot
       
       # Extracted values from the model and merge them into a tbl
-      if(!is.null(PlotData()$Model)){
+      if(!is.null(Plot()$Model)){
         data$regressionInfo <-
-          dplyr::bind_rows(data$regressionInfo %>%
-                             dplyr::filter(outputSampleID != sample$name),
-                           data.frame(
-                             outputSampleID =
-                               sample$name,
-                             nPointsUsed =
-                               nrow(PlotData()$Data),
-                             intercept =
-                               coef(PlotData()$Model)[1],
-                             slope =
-                               coef(PlotData()$Model)[2],
-                             adjustedRSquared =
-                               summary(PlotData()$Model)$adj.r.squared,
-                             residualStandardError =
-                               summary(PlotData()$Model)$sigma,
-                             degreesFreedom =
-                               summary(PlotData()$Model)$fstatistic[3],
-                             fStatistic =
-                               summary(PlotData()$Model)$fstatistic[1]))}
+          bind_rows(data$regressionInfo %>%
+                      filter(sampleID != sample$name),
+                    data.frame(
+                      sampleID =
+                        sample$name,
+                      nPointsUsed =
+                        nrow(Plot()$Data),
+                      intercept =
+                        coef(Plot()$Model)[1],
+                      slope =
+                        coef(Plot()$Model)[2],
+                      adjustedRSquared =
+                        summary(Plot()$Model)$adj.r.squared,
+                      residualStandardError =
+                        summary(Plot()$Model)$sigma,
+                      degreesFreedom =
+                        summary(Plot()$Model)$fstatistic[3],
+                      fStatistic =
+                        summary(Plot()$Model)$fstatistic[1]))}
       
       data$editted <- 
-        dplyr::bind_rows(
-          dplyr::filter(data$input, outputSampleID != sample$name),
+        bind_rows(
+          filter(data$editted, sampleID != sample$name),
           data$plotting) %>% 
-        dplyr::arrange(outputSampleID)
+        arrange(sampleID)
+      
+      data$unprocessed <- 
+        data$input %>%
+        filter(!(sampleID %in% IDs$processed))
+      
+      data$removed <- 
+        anti_join(data$input, data$editted) %>%
+        filter(sampleID %in% IDs$processed)
+      
+      saveRDS(data$editted,
+                paste(temporaryDirectory,
+                      "/processedSamples",
+                      time,
+                      ".rds",
+                      sep = ""))
+      saveRDS(data$unprocessed,
+                paste(temporaryDirectory,
+                      "/unprocessedSamples",
+                      time,
+                      ".rds",
+                      sep = ""))
+      saveRDS(data$removed,
+                paste(temporaryDirectory,
+                      "/removedPoints",
+                      time,
+                      ".rds",
+                      sep = ""))
+      saveRDS(data$regressionInfo,
+                paste(temporaryDirectory,
+                      "/unprocessedSamples",
+                      time,
+                      ".rds",
+                      sep = ""))
+      saveRDS(data$plots,
+              paste(temporaryDirectory,
+                    "/Plots_",
+                    time,
+                    ".rds",
+                    sep = ""))
+
+      
       
       if(sample$index != length(IDs$all)) {sample$index <- sample$index + 1}
+      
+      # Update the ID dropdown menu to the next sample
+      shiny::updateSelectizeInput(session,
+                           inputId = "ID",
+                           selected = sample$name)
     })
     
     # Runs when you press Reset Probe
-    shiny::observeEvent(input$resetProbe,{
+    shiny::observeEvent(input$undoEdit,{
       
       # Remove the current sample from the list of processed samples
       IDs$processed[[sample$name]] <- NULL
       
-      # Display all points again
+      # Display all points again. keepRows is a logical that indicates with sample
+      # points to keep in the data & display
       data$plotting <- 
         data$input %>% 
-        dplyr::filter(outputSampleID == sample$name)
+        filter(sampleID == sample$name)
       
       # Remove the processed plot for the current sample from the list of plots
       data$plots[[sample$name]] <- NULL
@@ -262,27 +427,98 @@ efflux <- function(input.data, xvar, yvar, idvar){
       if(nrow(data$regressionInfo)) {
         data$regressionInfo <- 
           data$regressionInfo %>% 
-          dplyr::filter(outputSampleID != sample$name)}
+          filter(sampleID != sample$name)}
       
       # Remove the data ponits from the current probe from the editted dataset
       data$editted <-
-        dplyr::filter(data$editted, outputSampleID != sample$name)
-    })
+        filter(data$editted, sampleID != sample$name)
+      
+      data$processed <- 
+        filter(data$processed, sampleID != sample$name)
+      
+      data$removed <- 
+        filter(data$removed, sampleID != sample$name)
+      
+    })  
     
     # Runs when you press previous
     shiny::observeEvent(input$previousID,{
       if(sample$index != 1) {sample$index <- sample$index - 1}
+      # Update the ID dropdown menu to the previous sample
+      shiny::updateSelectizeInput(session,
+                           inputId = "ID",
+                           selected = sample$name)
     })
     
     
     
     # Render Output -----
     
-    # Create the plot, do not attempt to run if variables are not set
-    output$plotConc <- shiny::renderPlot({
-      PlotData()$Plot
+    # Display the name of the selected
+    output$filename <- shiny::renderUI({
+      if(!is.null(input$File)){
+        return(HTML(
+          paste("<strong>Uploaded File:</strong>",
+                basename(input$File$name))
+        ))}
+      if(input$datExample > 0){
+        return(HTML("<strong>Uploaded File:</strong> EGM-4 Example"))}
+      if(input$csvExample > 0){
+        return(HTML("<strong>Uploaded File:</strong> CSV Example"))}
     })
     
+    # Create the plot, do not attempt to run if variables are not set
+    output$plotConc <- shiny::renderPlot({
+      
+      if(displayConditions$variablesNotSelected) {return(NULL)}
+      
+      Plot()$Plot
+      
+    }, height = 600)
+    
+    # Generate the plot controls
+    output$idSelection <- shiny::renderUI({
+      if(length(input$UniqueID) == 0) {return(NULL)}
+      shiny::column(width = 12,
+                    shiny::fluidRow(
+                      shiny::actionButton("previousID",
+                            label = "Previous",
+                            width = "30%",
+                            class = "btn-info"),
+                      shiny::actionButton("undoEdit",
+                            label = "Reset Probe",
+                            width = "30%",
+                            class = "btn-info"),
+                      shiny::actionButton("nextID",
+                            label = "Save & Next",
+                            width = "30%",
+                            class = "btn-info")
+             ),
+             shiny::br(),
+             shiny::fluidRow(
+               shiny::selectizeInput("ID",
+                              label = NULL,
+                              choices = IDs$all,
+                              multiple = F)
+             )
+      )
+    })
+    
+    # Generate the table of plotted data
+    # output$plottedData <- renderDataTable({
+    #   
+    #   #Don't run if variables and ID aren't selected
+    #   if(displayConditions$variablesNotSelected || 
+    #      displayConditions$idNotSelected) {return(NULL)}
+    #   DT::datatable(
+    #     Plot()$Data[workingValues$keepRows[[input$ID]],] %>%
+    #       select_("sampleID",
+    #               paste("`", input$X, "`", sep = ""),
+    #               paste("`", input$Y, "`", sep = "")),
+    #     options = list(paging = FALSE, searching = FALSE),
+    #     rownames = FALSE
+    #   )
+    # })
     
     # Generate the table of only editted table
     output$edittedData <- DT::renderDataTable({
@@ -296,8 +532,8 @@ efflux <- function(input.data, xvar, yvar, idvar){
     # Generate the table of data that will be downloaded
     output$outputData <- DT::renderDataTable({
       DT::datatable(
-        dplyr::bind_rows(filter(data$input, !(outputSampleID %in% IDs$processed)),
-                         filter(data$editted, outputSampleID %in% IDs$processed)),
+        bind_rows(filter(data$input, !(sampleID %in% IDs$processed)),
+                  filter(data$editted, sampleID %in% IDs$processed)),
         options = list(paging = FALSE, searching = FALSE),
         rownames = F)
     })
@@ -310,72 +546,216 @@ efflux <- function(input.data, xvar, yvar, idvar){
       # options = list(paging = FALSE, searching = FALSE),
       # rownames = F)
     })
+    
+    # Show the download button after at least 1 sample has been processed
+    # output$fileLabel <- shiny::renderUI({
+    #   if(length(IDs$processed)== 0) {return(NULL)}
+    #   shiny::p(paste("Data back-up saved to", temporaryFile))
+    # })
+    
+    output$buttons <- shiny::renderUI({
+      if(length(IDs$processed)== 0) {return(NULL)}
+      shiny::actionButton("done",
+                          label = "Finish and return to RStudio",
+                          class = "btn-info")
+    })
+      
+    # Instructions that vary based on where the user is in the process
+    output$instructions <- shiny::renderUI({
+      
+      if (is.null(Data())) {
+        shiny::fluidRow(
+          shiny::h4("Step 1: File Upload"),
+          shiny::p("Please select either a raw *.dat file from a PP Systems EGM infrared gas analyzer or any *.csv. If selecting a *.csv please be sure your file contains one or more column that can be used as a unique sample ID."),
+          shiny::br(),
+          shiny::p("Two example datasets are available. The first is raw output from a PP Systems EGM-4. The second respresents a full season of sampling where each unique sample is represented by its treatment, collar number, month of sample, and day of sample.")
+        )
+      } else {
+        if (!displayConditions$idNotSelected & !displayConditions$variablesNotSelected) {
+          shiny::fluidRow(
+            shiny::h4("Step 3: Evaluate Data and Fit Models"),
+            shiny::p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
+            shiny::p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown mean or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
+            shiny::p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available for download. I recommend downloading data often to avoid losing work if the app or your browser has a problem."),
+            shiny::p("Downloaded data will be a zipped file containing the final plots for each sample and five CSVs. 'Processed_Samples.csv' and 'Unprocessed_Samples.csv' contain the samples you viewed and saved and the samples that were not saved, respecitvely. 'Removed_Points.csv' contains all of the data points that you removed. 'Efflux_Summary.csv' contains the sample ID and the slope (assumed to be efflux in ppm), futher information about the models can be found in 'Model_Fits.csv'.")
+          )
+        } else{
+          shiny::fluidRow(
+            shiny::h4("Step 2: Set Variable & ID Columns"),
+            shiny::p("If you are working with efflux data select the columns that contains sample time steps and sample concentrations. If you are working with any other data the time variable corresponds to the x-axis and the concentration variable corresponds to the y-axis."),
+            shiny::p("Choose one or more columns that separates your data into unique samples. Changing the ID variables will delete all processed data")
+          )
+        }
+      }
+    })
+    
+    
+    
+    # Conditional Panel Controls --------------------------------------------------------
+    
+    output$fileUploaded <- shiny::reactive({
+      return(is.null(Data()))
+    })
+    
+    output$showPlot <- shiny::reactive({
+      return(!displayConditions$variablesNotSelected & !displayConditions$idNotSelected)
+    })
+    
+    # Set output options to keep them running in the background
+    shiny::outputOptions(output, 'fileUploaded', suspendWhenHidden = F)
+    shiny::outputOptions(output, "showPlot", suspendWhenHidden = F)
+    
+    
+    # Testing Tools -----
+    
+    # output$test <- renderPrint({
+    #  input$csvExample
+    # })
+    # # # 
+    # output$test2 <- renderPrint({
+    #   extension
+    # })
   }
   
   # UI -------
   ui <- 
-    miniUI::miniPage(
+    shiny::fluidPage(
       # theme = "efflux.css",
-      miniUI::gadgetTitleBar("Interactive Sample Cleaning and Linear Modeling"),
+      shiny::tags$head(
+        shiny::tags$link(rel="stylesheet", 
+                  type="text/css", 
+                  href="http://forest.mtu.edu/blackashwetlands/libs/css/efflux.css")),
+      title = "Interactive Sample Cleaning and Linear Modeling",
+      style = "margin:2em",
       
-      miniUI::miniTabstripPanel(
+      
+      # Header -------
+      
+      shiny::fluidRow(
+        style = "margin-bottom:2em",
+        shiny::column(8,
+                      shiny::h1("Efflux"),
+                      shiny::h3("Interactive Trimming and Linear Modeling"),
+                      shiny::br(),
+                      shiny::h4("Purpose", style = "margin-left:0.25em"),
+                      shiny::HTML(
+                 "<p style = 'margin-left:0.25em'>This shiny application provides an easy interactive method to trim sample data and fit linear regressions to each sample's data. It is specifically designed for CO<sub>2</sub> and CH<sub>4</sub> efflux.  It will work with any type of data that has a unique sample ID and dependent/independent variables. The code for this project is available on <a href = 'https://github.com/jpshanno/efflux'>GitHub</a> and is available as a function in <a href = 'https://github.com/jpshanno/ecoFlux'>the ecoFlux package</a> (devtools::install_github('jpshanno/ecoFlux')). Please contact <a href = 'mailto:josephshannon@outlook.com'>Joe Shannon</a> with any questions or problems.</p>")
+        )
+      ),    
+      
+      
+      # Sidebar ------
+      
+      shiny::sidebarPanel(
+        width = 3,
+        style = "margin-top:3em",
         
-        # Data Processing Tab -----        
-        
-        miniUI::miniTabPanel("Data Selection",
-                             miniUI::miniButtonBlock(
-                               border = "top",
-                               shiny::actionButton("previousID",
-                                                   label = "Previous"),
-                               shiny::actionButton("resetProbe",
-                                                   label = "Reset Probe"),
-                               shiny::actionButton("nextID",
-                                                   label = "Save & Next")
-                             ),
-                             # verbatimTextOutput("test"),
-                             miniUI::miniContentPanel(
-                               shiny::plotOutput("plotConc",
-                                                 click = "plot_click",
-                                                 dblclick = "plot_dblclick",
-                                                 hover = "plot_hover",
-                                                 # brush = "plot_brush",
-                                                 brush = shiny::brushOpts(id = "plot_brush",
-                                                                          delay = 4000,
-                                                                          delayType = "debounce",
-                                                                          resetOnNew = TRUE
-                                                 ),
-                                                 height = "100%")
-                             )
-        ),
-        
-        # Processed Samples Tab -----     
-        miniUI::miniTabPanel(
-          "Processed Samples",
-          miniUI::miniContentPanel(
-            shiny::dataTableOutput("edittedData")
-          )
-        ),
-        
-        
-        # Output Dataset Tab -----     
-        
-        miniUI::miniTabPanel(
-          "Output Dataset",
-          miniUI::miniContentPanel(
-            shiny::dataTableOutput("outputData")
-          )
-        ),        
-        
-        # Regression Information Tab -----     
-        
-        miniUI::miniTabPanel(
-          "Regression Dataset",
-          miniUI::miniContentPanel(
-            shiny::dataTableOutput("regressionData")
+        # Once a file has been chosen show the file name and the variable/id selections
+        shiny::conditionalPanel(
+          "output.fileUploaded != true",
+          
+          shiny::h4("Time"),
+          shiny::p("Select the column that contains your time steps"),
+          shiny::selectizeInput(inputId = "X",
+                         label = NULL,
+                         choices = NULL,
+                         multiple = F),
+          
+          shiny::h4("Concentrations"),
+          shiny::p("Select the column that contains gas concentration"),
+          shiny::selectizeInput(inputId = "Y",
+                         label = NULL,
+                         choices = NULL,
+                         multiple = F),
+          shiny::checkboxInput("zeroLimit",
+                        label = "Set lower y-axis limit to zero?",
+                        value = FALSE),
+          shiny::h4("Unique ID"),
+          shiny::p("Select one or more columns that represent a unique ID for each sample location and event"),
+          shiny::selectizeInput(inputId = "UniqueID",
+                         label = NULL,
+                         choices = NULL,
+                         multiple = T)
+        )     
+      ),
+      
+      
+      # Main Panel Set-up -----
+      
+      shiny::mainPanel(
+        align = "center",
+        width = 9,
+        shiny::tabsetPanel(
+          
+          # Data Processing Tab -----        
+          
+          
+          shiny::tabPanel("Data Selection", 
+                   style = "padding-top:2em; margin-left:2em",
+                   shiny::fluidRow(
+                     
+                     # Add the interactive plot & navigation tools
+                     shiny::conditionalPanel(
+                       "output.showPlot == true",
+                       shiny::column(8,
+                                     shiny::plotOutput("plotConc",
+                                         click = "plot_click",
+                                         dblclick = "plot_dblclick",
+                                         hover = "plot_hover",
+                                         brush = shiny::brushOpts(id = "plot_brush",
+                                                           delay = 4000,
+                                                           delayType = "debounce",
+                                                           resetOnNew = TRUE
+                                         ),
+                                         height = "100%"
+                              ),
+                              
+                              shiny::br(),
+                              
+                              shiny::uiOutput("idSelection")
+                       )
+                     ),
+                     
+                     # Display the appropriate set up instructions
+                     shiny::column(4,
+                            # verbatimTextOutput("test"),
+                            # verbatimTextOutput("test2"),
+                            # shiny::uiOutput("fileLabel"),
+                            shiny::uiOutput("buttons", align = "left"),
+                            shiny::br(),
+                            shiny::uiOutput("instructions", align = "left")
+                            
+                            
+                            
+                            
+                     )
+                     
+                   )
+          ),
+          
+          
+          # Processed Samples Tab -----     
+          
+          shiny::tabPanel("Processed Samples Only",
+                          shiny::dataTableOutput("edittedData")
+          ),
+          
+          
+          # Output Dataset Tab -----     
+          
+          shiny::tabPanel("Output Dataset",
+                          shiny::dataTableOutput("outputData")
+          ),
+          
+          
+          # Regression Information Tab -----     
+          
+          shiny::tabPanel("Regression Output",
+                          shiny::dataTableOutput("regressionData")
           )
         )
       )
     )
-  shiny::runGadget(ui, server)
+  shiny::runApp(shiny::shinyApp(ui = ui, server = server))
 }
 

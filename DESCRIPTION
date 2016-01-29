@@ -10,10 +10,11 @@ LazyData: true
 RoxygenNote: 5.0.1
 Imports: 
     data.table,
-    dplyr,
     DT,
     ggplot2,
     miniUI,
     readr,
     shiny,
     tidyr
+Depends:
+    dplyr
