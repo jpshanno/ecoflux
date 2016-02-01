@@ -417,7 +417,7 @@ efflux <- function(input.data){
                                sep = ""))
         readr::write_csv(data$regressionInfo,
                          paste(temporaryDirectory,
-                               "/unprocessedSamples",
+                               "/regressionInfo",
                                time,
                                ".csv",
                                sep = ""))
@@ -443,16 +443,16 @@ efflux <- function(input.data){
     # Runs when you press Reset Probe
     shiny::observeEvent(input$undoEdit,{
       
+      # Display all points again. keepRows is a logical that indicates with sample
+      # points to keep in the data & display
+      data$plotting <- 
+        data$input %>% 
+        filter(workingSampleID == sample$name)
+      
       if(sample$name %in% IDs$processed){
         
         # Remove the current sample from the list of processed samples
         IDs$processed[[sample$name]] <- NULL
-        
-        # Display all points again. keepRows is a logical that indicates with sample
-        # points to keep in the data & display
-        data$plotting <- 
-          data$input %>% 
-          filter(workingSampleID == sample$name)
         
         # Remove the processed plot for the current sample from the list of plots
         data$plots[[sample$name]] <- NULL
@@ -467,8 +467,10 @@ efflux <- function(input.data){
         data$editted <-
           filter(data$editted, workingSampleID != sample$name)
         
-        data$processed <- 
-          filter(data$processed, workingSampleID != sample$name)
+        data$unprocessed <- 
+          bind_rows(
+            data$unprocessed,
+            filter(data$input, workingSampleID == sample$name))
         
         data$removed <- 
           filter(data$removed, workingSampleID != sample$name)
@@ -634,11 +636,11 @@ efflux <- function(input.data){
     # Testing Tools -----
     
     # output$test <- renderPrint({
-    #  input$csvExample
+    #  sample$name
     # })
-    # # # 
+    # # #
     # output$test2 <- renderPrint({
-    #   extension
+    #   IDs$processed
     # })
   }
   
