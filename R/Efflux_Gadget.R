@@ -531,6 +531,7 @@ efflux <- function(input.data){
     
     # Generate the table of data that will be downloaded
     output$outputData <- DT::renderDataTable({
+      if(length(IDs$processed) ==0) {return(NULL)}
       DT::datatable(
         bind_rows(filter(data$input, !(sampleID %in% IDs$processed)),
                   filter(data$editted, sampleID %in% IDs$processed)),
@@ -541,18 +542,12 @@ efflux <- function(input.data){
     #Generate the table of model information
     output$regressionData <- DT::renderDataTable({
       if(length(IDs$processed) ==0) {return(NULL)}
-      # DT::datatable(
-      data$regressionInfo#,
-      # options = list(paging = FALSE, searching = FALSE),
-      # rownames = F)
+      DT::datatable(
+        data$regressionInfo,
+        options = list(paging = FALSE, searching = FALSE),
+        rownames = F)
     })
-    
-    # Show the download button after at least 1 sample has been processed
-    # output$fileLabel <- shiny::renderUI({
-    #   if(length(IDs$processed)== 0) {return(NULL)}
-    #   shiny::p(paste("Data back-up saved to", temporaryFile))
-    # })
-    
+
     output$buttons <- shiny::renderUI({
       if(length(IDs$processed)== 0) {return(NULL)}
       shiny::actionButton("done",
@@ -562,32 +557,22 @@ efflux <- function(input.data){
       
     # Instructions that vary based on where the user is in the process
     output$instructions <- shiny::renderUI({
-      
-      if (is.null(Data())) {
+      if (!displayConditions$idNotSelected & !displayConditions$variablesNotSelected) {
         shiny::fluidRow(
-          shiny::h4("Step 1: File Upload"),
-          shiny::p("Please select either a raw *.dat file from a PP Systems EGM infrared gas analyzer or any *.csv. If selecting a *.csv please be sure your file contains one or more column that can be used as a unique sample ID."),
-          shiny::br(),
-          shiny::p("Two example datasets are available. The first is raw output from a PP Systems EGM-4. The second respresents a full season of sampling where each unique sample is represented by its treatment, collar number, month of sample, and day of sample.")
+          shiny::h4("Step 2: Evaluate Data and Fit Models"),
+          shiny::p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
+          shiny::p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown mean or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
+          shiny::p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available for download. I recommend downloading data often to avoid losing work if the app or your browser has a problem."),
+          shiny::p("Downloaded data will be a zipped file containing the final plots for each sample and five CSVs. 'Processed_Samples.csv' and 'Unprocessed_Samples.csv' contain the samples you viewed and saved and the samples that were not saved, respecitvely. 'Removed_Points.csv' contains all of the data points that you removed. 'Efflux_Summary.csv' contains the sample ID and the slope (assumed to be efflux in ppm), futher information about the models can be found in 'Model_Fits.csv'.")
         )
-      } else {
-        if (!displayConditions$idNotSelected & !displayConditions$variablesNotSelected) {
-          shiny::fluidRow(
-            shiny::h4("Step 3: Evaluate Data and Fit Models"),
-            shiny::p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
-            shiny::p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown mean or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
-            shiny::p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available for download. I recommend downloading data often to avoid losing work if the app or your browser has a problem."),
-            shiny::p("Downloaded data will be a zipped file containing the final plots for each sample and five CSVs. 'Processed_Samples.csv' and 'Unprocessed_Samples.csv' contain the samples you viewed and saved and the samples that were not saved, respecitvely. 'Removed_Points.csv' contains all of the data points that you removed. 'Efflux_Summary.csv' contains the sample ID and the slope (assumed to be efflux in ppm), futher information about the models can be found in 'Model_Fits.csv'.")
-          )
-        } else{
-          shiny::fluidRow(
-            shiny::h4("Step 2: Set Variable & ID Columns"),
-            shiny::p("If you are working with efflux data select the columns that contains sample time steps and sample concentrations. If you are working with any other data the time variable corresponds to the x-axis and the concentration variable corresponds to the y-axis."),
-            shiny::p("Choose one or more columns that separates your data into unique samples. Changing the ID variables will delete all processed data")
-          )
-        }
+      } else{
+        shiny::fluidRow(
+          shiny::h4("Step 1: Set Variable & ID Columns"),
+          shiny::p("If you are working with efflux data select the columns that contains sample time steps and sample concentrations. If you are working with any other data the time variable corresponds to the x-axis and the concentration variable corresponds to the y-axis."),
+          shiny::p("Choose one or more columns that separates your data into unique samples. Changing the ID variables will delete all processed data")
+        )
       }
-    })
+  })
     
     
     
@@ -737,21 +722,21 @@ efflux <- function(input.data){
           # Processed Samples Tab -----     
           
           shiny::tabPanel("Processed Samples Only",
-                          shiny::dataTableOutput("edittedData")
+                          DT::dataTableOutput("edittedData")
           ),
           
           
           # Output Dataset Tab -----     
           
           shiny::tabPanel("Output Dataset",
-                          shiny::dataTableOutput("outputData")
+                          DT::dataTableOutput("outputData")
           ),
           
           
           # Regression Information Tab -----     
           
           shiny::tabPanel("Regression Output",
-                          shiny::dataTableOutput("regressionData")
+                          DT::dataTableOutput("regressionData")
           )
         )
       )
