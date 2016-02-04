@@ -432,7 +432,7 @@ efflux <- function(input.data){
       
       
       
-      if(sample$index != length(IDs$all)) {sample$index <- sample$index + 1}
+      if(sample$index != length(IDs$all)){sample$index <- sample$index + 1}
       sample$name <- IDs$all[sample$index]
       
       # Update the ID dropdown menu to the next sample
@@ -482,40 +482,40 @@ efflux <- function(input.data){
     # Runs when you press previous
     shiny::observeEvent(input$previousID,{
       
-      if(interface$type == "local"){
-        readr::write_csv(data$editted,
-                         paste(temporaryDirectory,
-                               "/processedSamples",
-                               time,
-                               ".csv",
-                               sep = ""))
-        readr::write_csv(data$unprocessed,
-                         paste(temporaryDirectory,
-                               "/unprocessedSamples",
-                               time,
-                               ".csv",
-                               sep = ""))
-        readr::write_csv(data$removed,
-                         paste(temporaryDirectory,
-                               "/removedPoints",
-                               time,
-                               ".csv",
-                               sep = ""))
-        readr::write_csv(data$regressionInfo,
-                         paste(temporaryDirectory,
-                               "/regressionInfo",
-                               time,
-                               ".csv",
-                               sep = ""))
-        ggplot2::ggsave(paste(temporaryDirectory,
-                              "/Plots/Plots_",
-                              sample$name,
-                              ".jpeg",
-                              sep = ""),
-                        Plot()$Plot)
-      }
+      # if(interface$type == "local"){
+      #   readr::write_csv(data$editted,
+      #                    paste(temporaryDirectory,
+      #                          "/processedSamples",
+      #                          time,
+      #                          ".csv",
+      #                          sep = ""))
+      #   readr::write_csv(data$unprocessed,
+      #                    paste(temporaryDirectory,
+      #                          "/unprocessedSamples",
+      #                          time,
+      #                          ".csv",
+      #                          sep = ""))
+      #   readr::write_csv(data$removed,
+      #                    paste(temporaryDirectory,
+      #                          "/removedPoints",
+      #                          time,
+      #                          ".csv",
+      #                          sep = ""))
+      #   readr::write_csv(data$regressionInfo,
+      #                    paste(temporaryDirectory,
+      #                          "/regressionInfo",
+      #                          time,
+      #                          ".csv",
+      #                          sep = ""))
+      #   ggplot2::ggsave(paste(temporaryDirectory,
+      #                         "/Plots/Plots_",
+      #                         sample$name,
+      #                         ".jpeg",
+      #                         sep = ""),
+      #                   Plot()$Plot)
+      # }
       
-      if(sample$index != 1) {sample$index <- sample$index - 1}
+      if(sample$index != 1){sample$index <- sample$index - 1}
       sample$name <- IDs$all[sample$index]
       # Update the ID dropdown menu to the previous sample
       shiny::updateSelectizeInput(session,
@@ -587,7 +587,26 @@ efflux <- function(input.data){
           )
         )
       })
-    
+
+    output$idSelection <- shiny::renderUI({
+      if(length(input$UniqueID) == 0) {return(NULL)}
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shiny::strong(paste("Slope =",
+                         round(coef(Plot()$Model)[2],2),
+                         sep = " "))
+        ),
+        shiny::column(
+          width = 6,
+          shiny::selectizeInput("ID",
+                              label = NULL,
+                              choices = IDs$all,
+                              multiple = F)
+        )
+      )
+    })
+
     
     # Generate the table of only editted table
     output$edittedData <- DT::renderDataTable({
@@ -809,10 +828,6 @@ efflux <- function(input.data){
                             # shiny::uiOutput("fileLabel"),
                             shiny::uiOutput("buttons"),
                             shiny::uiOutput("instructions", align = "left")
-                            
-                            
-                            
-                            
               )
               
             )
@@ -842,7 +857,6 @@ efflux <- function(input.data){
       )
     )
   
-
   #____________________________________________
   
   shiny::runApp(appDir = list(ui = ui, server = server))
