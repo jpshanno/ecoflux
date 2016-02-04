@@ -28,10 +28,6 @@
 #' 
 #' @param input.data A dataset containing a response variable and one or more
 #'   columns that can be used to create a unique ID
-#' @param xvar The time step variable or any independent variable (quoted)
-#' @param yvar Gas concentrations or any dependent variable (quoted)
-#' @param idvar A single ID column (quoted) or a character vector containing the
-#'   names of the ID columns
 #' @export
 #' @examples
 #' efflux()
@@ -90,8 +86,10 @@ efflux <- function(input.data){
       # Fit basic linear model with only unselected rows
       if(nrow(data$plotting) == 0){
         Model <- NULL
+        slope <- as.character("NA")
       } else {
-        Model <- lm(get(input$Y) ~ get(input$X), data = Data)}
+        Model <- lm(get(input$Y) ~ get(input$X), data = Data)
+        slope <- as.numeric(round(coef(Model)[2],2))}
       
       # Build plots with points and model
       if(nrow(data$plotting) != 0){
@@ -131,7 +129,7 @@ efflux <- function(input.data){
       info <- list(Data = Data,
                    Model = Model, 
                    Plot = Plot,
-                   Slope = round(coef(Model)[2],2))
+                   Slope = slope)
       return(info)
     })
     
@@ -340,7 +338,7 @@ efflux <- function(input.data){
     
     shiny::observeEvent(input$plot_dblclick, {
       data$plotting <- 
-        filter(data$plotting, is.na(workingSampleID))
+        data$plotting %>% slice(0)
     })
     
     # Jump to selected sample
@@ -432,7 +430,7 @@ efflux <- function(input.data){
       
       
       
-      if(sample$index != length(IDs$all)){sample$index <- sample$index + 1}
+      sample$index <- sample$index + 1
       sample$name <- IDs$all[sample$index]
       
       # Update the ID dropdown menu to the next sample
@@ -543,9 +541,11 @@ efflux <- function(input.data){
     # Create the plot, do not attempt to run if variables are not set
     output$plotConc <- shiny::renderPlot({
       if(displayConditions$variablesNotSelected) {return(NULL)}
+      
       Plot()$Plot
+      
     }, height = 600)
-    
+
     # Generate the plot controls
     output$plotControls <- shiny::renderUI({
       if(length(input$UniqueID) == 0) {return(NULL)}
@@ -568,42 +568,24 @@ efflux <- function(input.data){
     })
     
     # Generate the ID selection box
-      output$idSelection <- shiny::renderUI({
-        if(length(input$UniqueID) == 0) {return(NULL)}
-        shiny::fluidRow(
-          shiny::column(
-            width = 6,
-            shiny::strong(paste("Slope =",
-                                Plot()$Slope,
-                                sep = " "))
-          ),
-          shiny::column(
-            width = 6,
-            shiny::selectizeInput("ID",
-                                  label = NULL,
-                                  choices = IDs$all,
-                                  multiple = F,
-                                  selected = sample$name)
-          )
-        )
-      })
-
     output$idSelection <- shiny::renderUI({
       if(length(input$UniqueID) == 0) {return(NULL)}
-      shiny::fluidRow(
-        shiny::column(
-          width = 6,
-          shiny::strong(paste("Slope =",
-                         round(coef(Plot()$Model)[2],2),
-                         sep = " "))
-        ),
         shiny::column(
           width = 6,
           shiny::selectizeInput("ID",
-                              label = NULL,
-                              choices = IDs$all,
-                              multiple = F)
-        )
+                                label = NULL,
+                                choices = IDs$all,
+                                multiple = F)
+      )
+    })
+    
+    output$slopeText <- shiny::renderUI({
+      if(length(input$UniqueID) == 0) {return(NULL)}
+      shiny::column(
+        width = 6,
+        shiny::strong(paste("Slope =",
+                            Plot()$Slope,
+                            sep = " "))
       )
     })
 
@@ -802,7 +784,10 @@ efflux <- function(input.data){
                 "output.showPlot == true",
                 shiny::column(
                   width = 8,
-                  shiny::uiOutput("idSelection"),
+                  shiny::fluidRow(
+                    shiny::uiOutput("slopeText"),
+                    shiny::uiOutput("idSelection")
+                    ),
                   shiny::plotOutput(
                     "plotConc",
                     click = "plot_click",

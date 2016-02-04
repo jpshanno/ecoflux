@@ -9,13 +9,6 @@ efflux(input.data)
 \arguments{
 \item{input.data}{A dataset containing a response variable and one or more
 columns that can be used to create a unique ID}
-
-\item{xvar}{The time step variable or any independent variable (quoted)}
-
-\item{yvar}{Gas concentrations or any dependent variable (quoted)}
-
-\item{idvar}{A single ID column (quoted) or a character vector containing the
-names of the ID columns}
 }
 \value{
 A list consiting of a dataframe of the fitted regressions
