@@ -843,9 +843,8 @@ efflux <- function(input.data){
     )
   
 
+  #____________________________________________
   
   shiny::runApp(appDir = list(ui = ui, server = server))
-  
-  #____________________________________________
 }
 
