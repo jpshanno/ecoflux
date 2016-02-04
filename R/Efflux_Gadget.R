@@ -105,13 +105,13 @@ efflux <- function(input.data){
           ggplot2::geom_abline(slope = coef(Model)[2],
                                intercept = coef(Model)[1],
                                color = "black") +
-          ggplot2::annotate("text", 
-                            label = paste("Slope =", 
-                                          round(coef(Model)[2],2), 
-                                          sep = " "), 
-                            x = xCoord, 
-                            y = yCoord, 
-                            hjust = "inward") +
+          # ggplot2::annotate("text",
+          #                   label = paste("Slope =",
+          #                                 round(coef(Model)[2],2),
+          #                                 sep = " "),
+          #                   x = xCoord,
+          #                   y = yCoord,
+          #                   hjust = "inward") +
           ggplot2::theme_bw()
         if(input$zeroLimit == T){
           upperY <- ggplot2::ggplot_build(Plot)$panel$ranges[[1]]$y.range[2]
@@ -128,9 +128,10 @@ efflux <- function(input.data){
       }
       
       # Return all function values
-      info <- list(Model = Model, 
-                   Data = Data, 
-                   Plot = Plot)
+      info <- list(Data = Data,
+                   Model = Model, 
+                   Plot = Plot,
+                   Slope = round(coef(Model)[2],2))
       return(info)
     })
     
@@ -151,8 +152,12 @@ efflux <- function(input.data){
       
       removed = NULL,
       
+      plots =
+        list(),
+      
       plotting = 
         NULL,
+      
       regressionInfo = 
         tbl_df(data.frame(
           workingSampleID = character(), 
@@ -162,9 +167,7 @@ efflux <- function(input.data){
           adjustedRSquared = numeric(), 
           residualStandardError = numeric(), 
           degreesFreedom = numeric(), 
-          fStatistic = numeric())),
-      plots =
-        list()
+          fStatistic = numeric()))
     )
     
     
@@ -322,7 +325,6 @@ efflux <- function(input.data){
                                                    xvar = input$X,
                                                    yvar = input$Y,
                                                    maxpoints = 1))
-      # if(nrow(data$plotting) == 0){sample$index <- sample$index + 1}
     })
     
     # Run on dragging a box on the plot Return a data frame of points with a
@@ -334,7 +336,6 @@ efflux <- function(input.data){
                                                       input$plot_brush, 
                                                       xvar = input$X,
                                                       yvar = input$Y))
-      # if(nrow(data$plotting) == 0){sample$index <- sample$index + 1}
     })
     
     shiny::observeEvent(input$plot_dblclick, {
@@ -480,6 +481,40 @@ efflux <- function(input.data){
     
     # Runs when you press previous
     shiny::observeEvent(input$previousID,{
+      
+      if(interface$type == "local"){
+        readr::write_csv(data$editted,
+                         paste(temporaryDirectory,
+                               "/processedSamples",
+                               time,
+                               ".csv",
+                               sep = ""))
+        readr::write_csv(data$unprocessed,
+                         paste(temporaryDirectory,
+                               "/unprocessedSamples",
+                               time,
+                               ".csv",
+                               sep = ""))
+        readr::write_csv(data$removed,
+                         paste(temporaryDirectory,
+                               "/removedPoints",
+                               time,
+                               ".csv",
+                               sep = ""))
+        readr::write_csv(data$regressionInfo,
+                         paste(temporaryDirectory,
+                               "/regressionInfo",
+                               time,
+                               ".csv",
+                               sep = ""))
+        ggplot2::ggsave(paste(temporaryDirectory,
+                              "/Plots/Plots_",
+                              sample$name,
+                              ".jpeg",
+                              sep = ""),
+                        Plot()$Plot)
+      }
+      
       if(sample$index != 1) {sample$index <- sample$index - 1}
       sample$name <- IDs$all[sample$index]
       # Update the ID dropdown menu to the previous sample
@@ -507,11 +542,8 @@ efflux <- function(input.data){
     
     # Create the plot, do not attempt to run if variables are not set
     output$plotConc <- shiny::renderPlot({
-      
       if(displayConditions$variablesNotSelected) {return(NULL)}
-      
       Plot()$Plot
-      
     }, height = 600)
     
     # Generate the plot controls
@@ -536,15 +568,25 @@ efflux <- function(input.data){
     })
     
     # Generate the ID selection box
-    output$idSelection <- shiny::renderUI({
-      if(length(input$UniqueID) == 0) {return(NULL)}
-      shiny::fluidRow(
-        shiny::selectizeInput("ID",
-                              label = NULL,
-                              choices = IDs$all,
-                              multiple = F)
-      )
-    })
+      output$idSelection <- shiny::renderUI({
+        if(length(input$UniqueID) == 0) {return(NULL)}
+        shiny::fluidRow(
+          shiny::column(
+            width = 6,
+            shiny::strong(paste("Slope =",
+                                Plot()$Slope,
+                                sep = " "))
+          ),
+          shiny::column(
+            width = 6,
+            shiny::selectizeInput("ID",
+                                  label = NULL,
+                                  choices = IDs$all,
+                                  multiple = F,
+                                  selected = sample$name)
+          )
+        )
+      })
     
     
     # Generate the table of only editted table
@@ -603,7 +645,7 @@ efflux <- function(input.data){
             h4("Step 2: Evaluate Data and Fit Models"),
             p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
             p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown mean or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
-            p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available for download. I recommend downloading data often to avoid losing work if the app or your browser has a problem."),
+            p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available. Data are saved in a subfolder of the working directory upon each save"),
             p("Downloaded data will be a zipped file containing the final plots for each sample and five CSVs. 'Processed_Samples.csv' and 'Unprocessed_Samples.csv' contain the samples you viewed and saved and the samples that were not saved, respecitvely. 'Removed_Points.csv' contains all of the data points that you removed. 'Efflux_Summary.csv' contains the sample ID and the slope (assumed to be efflux in ppm), futher information about the models can be found in 'Model_Fits.csv'.")
           )
         } else{
@@ -731,45 +773,49 @@ efflux <- function(input.data){
           # Data Processing Tab -----        
           
           
-          shiny::tabPanel("Data Selection", 
-                          style = "padding-top:2em; margin-left:2em",
-                          shiny::fluidRow(
+          shiny::tabPanel(
+            "Data Selection", 
+            style = "padding-top:2em; margin-left:2em",
+            shiny::fluidRow(
+              
+              # Add the interactive plot & navigation tools
+              shiny::conditionalPanel(
+                "output.showPlot == true",
+                shiny::column(
+                  width = 8,
+                  shiny::uiOutput("idSelection"),
+                  shiny::plotOutput(
+                    "plotConc",
+                    click = "plot_click",
+                    dblclick = "plot_dblclick",
+                    hover = "plot_hover",
+                    brush = shiny::brushOpts(id = "plot_brush",
+                                             delay = 4000,
+                                             delayType = "debounce",
+                                             resetOnNew = TRUE,
+                                             clip = FALSE
+                    ),
+                    height = "100%"
+                  ),
+                  
+                  shiny::uiOutput("plotControls")
+                )
+              ),
+              
+              # Display the appropriate set up instructions
+              shiny::column(4,
+                            # verbatimTextOutput("test"),
+                            # verbatimTextOutput("test2"),
+                            # shiny::uiOutput("fileLabel"),
+                            shiny::uiOutput("buttons"),
+                            shiny::uiOutput("instructions", align = "left")
                             
-                            # Add the interactive plot & navigation tools
-                            shiny::conditionalPanel(
-                              "output.showPlot == true",
-                              shiny::column(8,
-                                            shiny::uiOutput("idSelection"),
-                                            shiny::plotOutput("plotConc",
-                                                              click = "plot_click",
-                                                              dblclick = "plot_dblclick",
-                                                              hover = "plot_hover",
-                                                              brush = shiny::brushOpts(id = "plot_brush",
-                                                                                       delay = 4000,
-                                                                                       delayType = "debounce",
-                                                                                       resetOnNew = TRUE
-                                                              ),
-                                                              height = "100%"
-                                            ),
-                                            
-                                            shiny::uiOutput("plotControls")
-                              )
-                            ),
                             
-                            # Display the appropriate set up instructions
-                            shiny::column(4,
-                                          # verbatimTextOutput("test"),
-                                          # verbatimTextOutput("test2"),
-                                          # shiny::uiOutput("fileLabel"),
-                                          shiny::uiOutput("buttons"),
-                                          shiny::uiOutput("instructions", align = "left")
-                                          
-                                          
-                                          
-                                          
-                            )
                             
-                          )
+                            
+              )
+              
+            )
           ),
           
           
@@ -796,10 +842,10 @@ efflux <- function(input.data){
       )
     )
   
-  effluxApp <- shiny::shinyApp(ui = ui, server = server)
+
+  
+  shiny::runApp(appDir = list(ui = ui, server = server))
   
   #____________________________________________
-  
-  shiny::runApp(effluxApp)
 }
 
