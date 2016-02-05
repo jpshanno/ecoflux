@@ -316,7 +316,8 @@ efflux <- function(input.data = NULL, run = TRUE){
       )
     
     # Run on click on the plot
-    shiny::observeEvent(input$plot_click, {
+    shiny::observe({
+      req(data$plotting)
       data$plotting <- anti_join(data$plotting, 
                                  shiny::nearPoints(data$plotting, 
                                                    input$plot_click,
@@ -328,7 +329,8 @@ efflux <- function(input.data = NULL, run = TRUE){
     # Run on dragging a box on the plot Return a data frame of points with a
     # column (selected_) indicating which point was selected. Max points ensures
     # that only the closest point is returned
-    shiny::observeEvent(input$plot_brush, {
+    shiny::observe({
+      req(data$plotting)
       data$plotting <- anti_join(data$plotting, 
                                  shiny::brushedPoints(data$plotting,
                                                       input$plot_brush, 
