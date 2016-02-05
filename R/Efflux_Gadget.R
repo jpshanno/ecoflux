@@ -846,7 +846,7 @@ efflux <- function(input.data = NULL, run = TRUE){
   
   #____________________________________________
   
-  if(run == FALSE) {return(shinyApp(ui = ui, server = server))}
+  if(run == FALSE) {return(list(ui = ui, server = server))}
   shiny::runApp(appDir = list(ui = ui, server = server))
 }
 
