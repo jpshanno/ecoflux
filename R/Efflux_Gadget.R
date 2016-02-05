@@ -104,13 +104,6 @@ efflux <- function(input.data = NULL, run = TRUE){
           ggplot2::geom_abline(slope = coef(Model)[2],
                                intercept = coef(Model)[1],
                                color = "black") +
-          # ggplot2::annotate("text",
-          #                   label = paste("Slope =",
-          #                                 round(coef(Model)[2],2),
-          #                                 sep = " "),
-          #                   x = xCoord,
-          #                   y = yCoord,
-          #                   hjust = "inward") +
           ggplot2::theme_bw()
         if(input$zeroLimit == T){
           upperY <- ggplot2::ggplot_build(Plot)$panel$ranges[[1]]$y.range[2]
@@ -236,6 +229,7 @@ efflux <- function(input.data = NULL, run = TRUE){
         Data() %>%
         tidyr::unite_("workingSampleID", unlist(input$UniqueID), sep = "_") %>%
         slice(0)
+        
       
       # Generate a string of all the sample IDs
       IDs$all <- 
@@ -243,6 +237,8 @@ efflux <- function(input.data = NULL, run = TRUE){
         distinct(workingSampleID) %>%
         arrange(workingSampleID) %>% 
         .$workingSampleID
+      
+      
     })
     
     shiny::observe({
@@ -316,8 +312,7 @@ efflux <- function(input.data = NULL, run = TRUE){
       )
     
     # Run on click on the plot
-    shiny::observe({
-      req(data$plotting)
+    shiny::observeEvent(input$plot_click,{
       data$plotting <- anti_join(data$plotting, 
                                  shiny::nearPoints(data$plotting, 
                                                    input$plot_click,
@@ -329,8 +324,7 @@ efflux <- function(input.data = NULL, run = TRUE){
     # Run on dragging a box on the plot Return a data frame of points with a
     # column (selected_) indicating which point was selected. Max points ensures
     # that only the closest point is returned
-    shiny::observe({
-      req(data$plotting)
+    shiny::observeEvent(input$plot_brush,{
       data$plotting <- anti_join(data$plotting, 
                                  shiny::brushedPoints(data$plotting,
                                                       input$plot_brush, 
