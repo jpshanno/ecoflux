@@ -28,6 +28,7 @@
 #' 
 #' @param input.data A dataset containing a response variable and one or more
 #'   columns that can be used to create a unique ID
+#' @import dplyr 
 #' @export
 #' @examples
 #' efflux()
