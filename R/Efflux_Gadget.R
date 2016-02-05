@@ -28,12 +28,14 @@
 #' 
 #' @param input.data A dataset containing a response variable and one or more
 #'   columns that can be used to create a unique ID
+#' @param run A logical value indicating if the application should be run, or 
+#'   returned to run later. Used for webapp deployment.
 #' @import dplyr 
 #' @export
 #' @examples
 #' efflux()
 
-efflux <- function(input.data = NULL){
+efflux <- function(input.data = NULL, run = TRUE){
 
   time <- format(Sys.time(), "%Y%m%d_%H%M%S")
   
@@ -844,6 +846,7 @@ efflux <- function(input.data = NULL){
   
   #____________________________________________
   
+  if(run == FALSE) {return(shinyApp(ui = ui, server = server))}
   shiny::runApp(appDir = list(ui = ui, server = server))
 }
 

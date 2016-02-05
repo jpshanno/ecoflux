@@ -4,11 +4,14 @@
 \alias{efflux}
 \title{Easily fit multilple linear regressions over selected data points}
 \usage{
-efflux(input.data = NULL)
+efflux(input.data = NULL, run = TRUE)
 }
 \arguments{
 \item{input.data}{A dataset containing a response variable and one or more
 columns that can be used to create a unique ID}
+
+\item{run}{A logical value indicating if the application should be run, or 
+returned to run later. Used for webapp deployment.}
 }
 \value{
 A list consiting of a dataframe of the fitted regressions
