@@ -78,12 +78,10 @@ efflux <- function(input.data = NULL, run = TRUE){
     # only the selected sample, fits a model, and creates a plot. The data, model,
     # and plot are all returned.
     Plot <- shiny::reactive({
-      Data <- 
-        data$plotting
       
-      xCoord <- min(Data[[input$X]], na.rm = T)
-      yDiff <- max(Data[[input$Y]], na.rm = T) - min(Data[[input$Y]], na.rm = T)
-      yCoord <- max(Data[[input$Y]], na.rm = T) - 0.05*yDiff
+      xCoord <- min(data$plotting[[input$X]], na.rm = T)
+      yDiff <- max(data$plotting[[input$Y]], na.rm = T) - min(data$plotting[[input$Y]], na.rm = T)
+      yCoord <- max(data$plotting[[input$Y]], na.rm = T) - 0.05*yDiff
       
       
       # Fit basic linear model with only unselected rows
@@ -91,13 +89,13 @@ efflux <- function(input.data = NULL, run = TRUE){
         Model <- NULL
         slope <- as.character("NA")
       } else {
-        Model <- lm(get(input$Y) ~ get(input$X), data = Data)
+        Model <- lm(get(input$Y) ~ get(input$X), data = data$plotting)
         slope <- as.numeric(round(coef(Model)[2],2))}
       
       # Build plots with points and model
       if(nrow(data$plotting) != 0){
         Plot <- 
-          ggplot2::ggplot(data = Data,
+          ggplot2::ggplot(data = data$plotting,
                           ggplot2::aes(x = get(input$X),
                                        y = get(input$Y))) +
           ggplot2::xlab(input$X) +
@@ -122,15 +120,14 @@ efflux <- function(input.data = NULL, run = TRUE){
         Plot <- 
           ggplot2::ggplot(ggplot2::aes(x = get(input$X),
                                        y = get(input$Y)),
-                          data =  Data) +
+                          data =  data$plotting) +
           ggplot2::xlab(input$X) +
           ggplot2::ylab(input$Y) +
           ggplot2::geom_blank()
       }
       
       # Return all function values
-      info <- list(Data = Data,
-                   Model = Model, 
+      info <- list(Model = Model, 
                    Plot = Plot,
                    Slope = slope)
       return(info)
@@ -321,7 +318,7 @@ efflux <- function(input.data = NULL, run = TRUE){
     # Run on click on the plot
     shiny::observeEvent(input$plot_click, {
       data$plotting <- anti_join(data$plotting, 
-                                 shiny::nearPoints(Plot()$Data, 
+                                 shiny::nearPoints(data$plotting, 
                                                    input$plot_click,
                                                    xvar = input$X,
                                                    yvar = input$Y,
@@ -333,7 +330,7 @@ efflux <- function(input.data = NULL, run = TRUE){
     # that only the closest point is returned
     shiny::observeEvent(input$plot_brush, {
       data$plotting <- anti_join(data$plotting, 
-                                 shiny::brushedPoints(Plot()$Data,
+                                 shiny::brushedPoints(data$plotting,
                                                       input$plot_brush, 
                                                       xvar = input$X,
                                                       yvar = input$Y))
@@ -369,7 +366,7 @@ efflux <- function(input.data = NULL, run = TRUE){
                       workingSampleID =
                         sample$name,
                       nPointsUsed =
-                        nrow(Plot()$Data),
+                        nrow(data$plotting),
                       intercept =
                         coef(Plot()$Model)[1],
                       slope =
@@ -647,10 +644,14 @@ efflux <- function(input.data = NULL, run = TRUE){
         if (!displayConditions$idNotSelected & !displayConditions$variablesNotSelected) {
           fluidRow(
             h4("Step 2: Evaluate Data and Fit Models"),
-            p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
-            p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown mean or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
+            p("Select points to remove from the data by clicking on them or remove multiple points by clicking and dragging a box around the points you wish to remove. The entire sample can be discarded by double-clicking on the plot. Please keep in mind that this step is not for removing data you view as 'outliers'. Points should only be removed due to equipment/sampling errors or to remove efflux 'ramp up' at the beginning of sampling."),
+            p("After you are finished with a sample press 'Save & Next' to advance to the next sample. This will also save information about the model fit and update the output data, removing the data you selected. You can view any sample using the dropdown menu or return to the previous plot with the 'Previous' button (navigating this way will not save any of your selections). Resetting the probe will delete the saved regression information and add all of the sample points back to your plot and the output data."),
             p("Once you have saved information from at least one plot the updated datset, regression information, and the final plot will all be available. Data are saved in a subfolder of the working directory upon each save"),
+            if(interface$type == "web"){
             p("Downloaded data will be a zipped file containing the final plots for each sample and five CSVs. 'Processed_Samples.csv' and 'Unprocessed_Samples.csv' contain the samples you viewed and saved and the samples that were not saved, respecitvely. 'Removed_Points.csv' contains all of the data points that you removed. 'Efflux_Summary.csv' contains the sample ID and the slope (assumed to be efflux in ppm), futher information about the models can be found in 'Model_Fits.csv'.")
+            } else {
+                p("Each time a sample is saved the plot is written to a temporary directory created in your current working directory. The directory also contains CSV of the processed samples, unprocess samples, removed points, and regression information.")
+              }
           )
         } else{
           fluidRow(
@@ -693,8 +694,8 @@ efflux <- function(input.data = NULL, run = TRUE){
   # UI -------
   ui  <-  
     shiny::fluidPage(
-      # theme = "http://forest.mtu.edu/blackashwetlands/libs/css/efflux.css",
-      shiny::includeCSS("http://forest.mtu.edu/blackashwetlands/libs/css/efflux.css"),
+      # theme = system.file("css","efflux.css", package = "ecoFlux"),
+      shiny::includeCSS(system.file("css","efflux.css", package = "ecoFlux")),
       # shiny::tags$head(
       #   shiny::tags$link(rel="stylesheet", 
       #                    type="text/css", 
@@ -713,7 +714,9 @@ efflux <- function(input.data = NULL, run = TRUE){
                       shiny::br(),
                       shiny::h4("Purpose", style = "margin-left:0.25em"),
                       shiny::HTML(
-                        "<p style = 'margin-left:0.25em'>This shiny application provides an easy interactive method to trim sample data and fit linear regressions to each sample's data. It is specifically designed for CO<sub>2</sub> and CH<sub>4</sub> efflux.  It will work with any type of data that has a unique sample ID and dependent/independent variables. The code for this project is available on <a href = 'https://github.com/jpshanno/efflux'>GitHub</a> and is available as a function in <a href = 'https://github.com/jpshanno/ecoFlux'>the ecoFlux package</a> (devtools::install_github('jpshanno/ecoFlux')). Please contact <a href = 'mailto:josephshannon@outlook.com'>Joe Shannon</a> with any questions or problems.</p>")
+                        "<p style = 'margin-left:0.25em'>This shiny application provides an easy interactive method to trim sample data and fit linear regressions to each sample's data. It is specifically designed for CO<sub>2</sub> and CH<sub>4</sub> efflux.  It will work with any type of data that has a unique sample ID and dependent/independent variables. This app is a available as a function in <a href = 'https://github.com/jpshanno/ecoFlux'>the ecoFlux package</a>. To install copy the following line into R:  
+                        <code>install.pacakges('devtools'); devtools::install_github('jpshanno/ecoFlux')</code>  
+                        Please contact <a href = 'mailto:josephshannon@outlook.com'>Joe Shannon</a> with any questions or problems.</p>")
         )
       ),    
       
