@@ -16,6 +16,5 @@ Imports:
     readr,
     shiny,
     tidyr
-Depends:
-    dplyr (>= 0.4.3)
+Depends: dplyr (>= 0.4.3)
 
