@@ -4,7 +4,7 @@
 \alias{efflux}
 \title{Easily fit multilple linear regressions over selected data points}
 \usage{
-efflux(input.data)
+efflux(input.data = NULL)
 }
 \arguments{
 \item{input.data}{A dataset containing a response variable and one or more

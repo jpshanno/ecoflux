@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^packrat/
 ^\.Rprofile$
+^Temp*/
+^\.git
+^\.gitignore

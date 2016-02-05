@@ -32,8 +32,8 @@
 #' @examples
 #' efflux()
 
-efflux <- function(input.data){
-  
+efflux <- function(input.data = NULL){
+
   time <- format(Sys.time(), "%Y%m%d_%H%M%S")
   
   temporaryDirectory <- 
@@ -45,7 +45,6 @@ efflux <- function(input.data){
   dir.create(paste(temporaryDirectory,
                    "/Plots",
                    sep = ""))
-
   
 #___________________________________________
   
@@ -59,15 +58,16 @@ efflux <- function(input.data){
       
       interface$type <- "web"
       
-      if(exists("input.data")){
+      if(exists("input.data") && !is.null(input.data)){
         interface$type <- "local"
         return(input.data)}
       
       if(input$csvExample > 0) {
-        return(readr::read_csv("./www/examples/Multi-Column_ID.csv"))}
+        data(multipleColumnID)
+        return(multipleColumnID)}
       if(input$datExample > 0) {
-        return(readr::read_tsv("./www/examples/EGM4_Output.dat", skip = 2) %>% 
-                 dplyr::filter(row_number() != nrow(.)))}
+        data(egm4Example)
+        return(egm4Example)}
       
     })
     
@@ -679,11 +679,11 @@ efflux <- function(input.data){
     # Testing Tools -----
     
     # output$test <- renderPrint({
-    #  sample$name
+    #  interface$type
     # })
-    # # #
+    # # # #
     # output$test2 <- renderPrint({
-    #   IDs$processed
+    #   input$csvExample
     # })
   }
   
@@ -810,7 +810,6 @@ efflux <- function(input.data){
               shiny::column(4,
                             # verbatimTextOutput("test"),
                             # verbatimTextOutput("test2"),
-                            # shiny::uiOutput("fileLabel"),
                             shiny::uiOutput("buttons"),
                             shiny::uiOutput("instructions", align = "left")
               )
