@@ -544,7 +544,7 @@ efflux <- function(input.data = NULL, run = TRUE){
       
       Plot()$Plot
       
-    })
+    }, height = 600)
 
     # Generate the plot controls
     output$plotControls <- shiny::renderUI({
