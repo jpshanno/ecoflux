@@ -86,3 +86,51 @@ blank_seq <- function(from = NULL, to = NULL, subjects = NULL, timestep = NULL){
   
   return(full_sequence)
   }
+
+# lsmeansTable ----------------------------------------------------------
+#' Extract means, contrasts, or trends from a list of lsmobj
+#'
+#' Creates a data frame from a list of lsmobj results generated from a looped 
+#' call involving lsmeans or lstrends.
+#' @return A dataframe with the first column containing a factor comprised of
+#' the names of the list object.
+#' @param lsList A list of objects of class lsmobj
+#' @param idName The name for the grouping factor created from the names of the 
+#' list supplied as a string. Defaults to "ID"
+#' @param table a string specifying "contrasts" or "lsmeans" which specifies 
+#' whether the estimates of the means or the contrasts will be returned by 
+#' lsmeansTable()
+#' @export
+#' @rdname lsmeansTable
+lsmeansTable <- 
+  function(lsList, idName = "ID", table = "contrasts") {
+    temp <- do.call(
+      rbind, 
+      lapply(
+        seq_along(lsList), 
+        function(x){
+          fullList <- lsList
+          cbind(names(fullList)[[x]],
+                summary(fullList[[x]][[table]]))}))
+    names(temp)[1] <- idName
+    temp}
+
+#' @export
+#' @rdname lsmeansTable
+lstrendsTable <- function(lsList, idName = "ID"){
+  temp <- 
+    do.call(
+      rbind,
+      lapply(
+        seq_along(lsList),
+        function(x){
+          fullList <- lsList
+          cbind(ID = names(fullList)[[x]],
+                cld(fullList[[x]]))})
+    ) %>% 
+    mutate(Age = as.numeric(as.character(Age)),
+           .group = as.numeric(.group)) %>% 
+    rename(Significance_Group = .group)
+  names(temp)[1] <- idName
+  temp
+}
