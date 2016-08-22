@@ -1,6 +1,6 @@
 Package: ecoFlux
 Title:  Functions for ecological flux studies including sap flux and soil/stem C efflux.
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R: person("Joe", "Shannon", email = "josephshannon@outlook.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
 Depends:
@@ -13,6 +13,8 @@ Imports:
     dplyr,
     DT,
     ggplot2,
+    grid,
+    gridExtra,
     miniUI,
     readr,
     shiny,
