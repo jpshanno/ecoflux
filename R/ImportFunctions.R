@@ -38,8 +38,8 @@ read_rdb <- function(file){
 #' @examples
 #' read_dir()
 
-read_dir <- function(dir = NULL, pattern = NULL, fun = readr::read_csv, ...){
-  fileslist <- paste(dir, list.files(dir, pattern = pattern), sep = "/")
+read_dir <- function(dir = getwd(), pattern = NULL, fun = readr::read_csv, ...){
+  fileslist <- list.files(dir, pattern = pattern, full.names = T)
   nFiles <- length(fileslist)
   for(i in 1:nFiles){
     file.i <- fileslist[i]

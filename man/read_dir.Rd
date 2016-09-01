@@ -4,7 +4,7 @@
 \alias{read_dir}
 \title{Read in a directory of files with identical data formats}
 \usage{
-read_dir(dir = NULL, pattern = NULL, fun = readr::read_csv, ...)
+read_dir(dir = getwd(), pattern = NULL, fun = readr::read_csv, ...)
 }
 \arguments{
 \item{dir}{A directory with only data files}
