@@ -27,8 +27,7 @@ read_rdb <- function(file){
 # Read directory ----------------------------------------------------------------
 #' Read in a directory of files with identical data formats
 #'
-#' This function reads in all files from a directory and stores them in a 
-#' \code{\link[dplyr]{tbl_dt}}.  All files must have the same format.
+#' This function reads in all files from a directory.  All files must have the same layout.
 #' @param dir A directory with only data files
 #' @param pattern A pattern to match filenames as in \code{\link[base]{list.files}}
 #' @param fun The function to use to read in the files, defaults to 
@@ -47,5 +46,5 @@ read_dir <- function(dir = getwd(), pattern = NULL, fun = readr::read_csv, ...){
     if(i != 1) {import_list <- rbind(import_list, import.i)}
     else {import_list <- import.i}
   }
-  return(dplyr::tbl_df(import_list))
+  return(import_list)
 }

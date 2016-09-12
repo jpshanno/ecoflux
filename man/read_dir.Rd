@@ -17,8 +17,7 @@ read_dir(dir = getwd(), pattern = NULL, fun = readr::read_csv, ...)
 \item{...}{Additaional arguments to pass to the input method}
 }
 \description{
-This function reads in all files from a directory and stores them in a 
-\code{\link[dplyr]{tbl_dt}}.  All files must have the same format.
+This function reads in all files from a directory.  All files must have the same layout.
 }
 \examples{
 read_dir()
