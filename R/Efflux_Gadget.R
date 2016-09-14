@@ -690,8 +690,8 @@ efflux <- function(input.data = NULL, run = TRUE){
   # UI -------
   ui  <-  
     shiny::fluidPage(
-      # theme = system.file("css","efflux.css", package = "ecoFlux"),
-      shiny::includeCSS(system.file("css","efflux.css", package = "ecoFlux")),
+      # theme = system.file("css","efflux.css", package = "ecoflux"),
+      shiny::includeCSS(system.file("css","efflux.css", package = "ecoflux")),
       # shiny::tags$head(
       #   shiny::tags$link(rel="stylesheet", 
       #                    type="text/css", 
@@ -710,8 +710,8 @@ efflux <- function(input.data = NULL, run = TRUE){
                       shiny::br(),
                       shiny::h4("Purpose", style = "margin-left:0.25em"),
                       shiny::HTML(
-                        "<p style = 'margin-left:0.25em'>This shiny application provides an easy interactive method to trim sample data and fit linear regressions to each sample's data. It is specifically designed for CO<sub>2</sub> and CH<sub>4</sub> efflux.  It will work with any type of data that has a unique sample ID and dependent/independent variables. This app is a available as a function in <a href = 'https://github.com/jpshanno/ecoFlux'>the ecoFlux package</a>. To install copy the following line into R:  
-                        <code>install.packages('devtools'); devtools::install_github('jpshanno/ecoFlux')</code>  
+                        "<p style = 'margin-left:0.25em'>This shiny application provides an easy interactive method to trim sample data and fit linear regressions to each sample's data. It is specifically designed for CO<sub>2</sub> and CH<sub>4</sub> efflux.  It will work with any type of data that has a unique sample ID and dependent/independent variables. This app is a available as a function in <a href = 'https://github.com/jpshanno/ecoflux'>the ecoflux package</a>. To install copy the following line into R:  
+                        <code>install.packages('devtools'); devtools::install_github('jpshanno/ecoflux')</code>  
                         Please contact <a href = 'mailto:josephshannon@outlook.com'>Joe Shannon</a> with any questions or problems.</p>")
         )
       ),    
