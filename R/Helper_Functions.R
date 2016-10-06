@@ -225,7 +225,7 @@ time_seq <- function(start, end, step, units = "days"){
   endTime <- lubridate::parse_date_time(end, orders = c('Ymd HMS', 'Ymd HM', 'Ymd'))
   nSteps <- (endTime - startTime)/lubridate::as.duration(timeStep)
   
-  if(nSteps - round(nSteps, digits = 0) != 0){
+  if(!all.equal(nSteps, round(nSteps, digits = 0))){
     stop("Choosen time step does not fit evenly between start and end times.")
   }
   
