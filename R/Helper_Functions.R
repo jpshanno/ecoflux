@@ -46,10 +46,10 @@ SEy <- function(model, Xes) {
 # Blank Sequence ----------------------------------------------------------
 #' Create blank time sequence for each unique subject
 #'
-#' Creates a data table with subject, date (IDate), and time (ITime) columns over
+#' Returns a dataframe with subject, date, and time columns over
 #' a specified range of days with a given time step
-#' @param from a start date as a character string ("yyyy-mm-dd") or an IDate object
-#' @param to a start date as a character string ("yyyy-mm-dd") or an IDate object
+#' @param from a start date as a character string ("yyyy-mm-dd") or a date object
+#' @param to a start date as a character string ("yyyy-mm-dd") or a date object
 #' @param subjects a character vector of subject IDs
 #' @param timestep the desired time step in minutes
 #' @export
@@ -58,7 +58,7 @@ SEy <- function(model, Xes) {
 
 blank_seq <- function(from = NULL, to = NULL, subjects = NULL, timestep = NULL){
 
-  dates <- seq(from = as.IDate(from), to = as.IDate(to), by =1)
+  dates <- seq(from = ymd(from), to = as.IDate(to), by =1)
   times <- blank_day(timestep = timestep)
   
   n_subs <- length(subjects)
@@ -202,4 +202,32 @@ ggpanel <- function(plots, orientation = "horizontal") {
           ncol = 
             ncol))))
   }
+}
+
+# Time Sequence ----------------------------------------------------------
+#' Create time sequence with custom intervals
+#'
+#' Creates a POSIXt vector from the start time to the end time with N number of
+#' steps, based on the interval length choosen.
+#' @return A POSIXt vector
+#' @param start a start date or time as a character string ("yyyy-mm-dd", "yyyy-mm-dd HH:MM", "yyyy-mm-dd HH:MM:SS)
+#' @param end a start date or time as a character string ("yyyy-mm-dd", "yyyy-mm-dd HH:MM", "yyyy-mm-dd HH:MM:SS)
+#' @param step a number representing the length of time in units between each step
+#' @param units the units of step: "seconds", "minutes", "days", "months", "years"
+#' @export
+#' @examples
+#' time_seq("2016-11-01", "2016-11-03", step = 15, units = "minutes")
+
+time_seq <- function(start, end, step, units = "days"){
+  require(lubridate)
+  timeStep <- do.call(units, list(step))
+  startTime <- lubridate::parse_date_time(start, orders = c('Ymd HMS', 'Ymd HM', 'Ymd'))
+  endTime <- lubridate::parse_date_time(end, orders = c('Ymd HMS', 'Ymd HM', 'Ymd'))
+  nSteps <- (endTime - startTime)/lubridate::as.duration(timeStep)
+  
+  if(nSteps - round(nSteps, digits = 0) != 0){
+    stop("Choosen time step does not fit evenly between start and end times.")
+  }
+  
+  startTime + timeStep*0:nSteps
 }

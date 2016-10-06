@@ -7,16 +7,16 @@
 blank_seq(from = NULL, to = NULL, subjects = NULL, timestep = NULL)
 }
 \arguments{
-\item{from}{a start date as a character string ("yyyy-mm-dd") or an IDate object}
+\item{from}{a start date as a character string ("yyyy-mm-dd") or a date object}
 
-\item{to}{a start date as a character string ("yyyy-mm-dd") or an IDate object}
+\item{to}{a start date as a character string ("yyyy-mm-dd") or a date object}
 
 \item{subjects}{a character vector of subject IDs}
 
 \item{timestep}{the desired time step in minutes}
 }
 \description{
-Creates a data table with subject, date (IDate), and time (ITime) columns over
+Returns a dataframe with subject, date, and time columns over
 a specified range of days with a given time step
 }
 \examples{
