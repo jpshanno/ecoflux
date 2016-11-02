@@ -237,8 +237,23 @@ ggpanel <- function(plots, orientation = "horizontal", legend.position = "bottom
            function(x) {ggplotGrob(x + theme(legend.position = "none"))})
   
   plotsPanel <- 
-    arrangeGrob(do.call(eval(bindFunction), 
-                        plotGrobs))
+    if(orientation == "horizontal"){
+      arrangeGrob(do.call(eval(bindFunction), 
+                          plotGrobs))
+    } else {
+      if(length(unique(sapply(plotGrobs, length))) == 1){
+        arrangeGrob(
+          do.call(
+            eval(bindFunction), 
+            plotGrobs))
+      } else {
+        do.call(
+          gridExtra::arrangeGrob,
+          list(
+            grobs = plotGrobs,
+            ncol = ncol))
+      }
+    }
   
   if(haveLegends){
     legend <- 
