@@ -198,12 +198,8 @@ lstrendsTable <- function(lsList, idName = "ID"){
 
 ggpanel <- function(plots, orientation = "horizontal", legend.position = "bottom") {
   
-  if(!is.list(plots)){
-    stop("Input plots must be contained within a list")
-  }
-  
   if(!all(sapply(plots, is.ggplot))){
-    stop("Please include only ggplot objects in the input list")
+    stop("Input plots must be a list containing only ggplot objects")
   }
   
   if(!(legend.position %in% c("top", "bottom", "left", "right", "none"))){
@@ -218,8 +214,8 @@ ggpanel <- function(plots, orientation = "horizontal", legend.position = "bottom
                               "horizontal",
                               "vertical")
   
-  legendGrob <- ggplotGrob(plots[[1]] + 
-                             theme(legend.direction = legendOrientation))$grobs
+  legendGrob <- ggplot2::ggplotGrob(plots[[1]] + 
+                             ggplot2::theme(legend.direction = legendOrientation))$grobs
   
   bindFunction <- ifelse(orientation == "horizontal",
                          quote(cbind),
@@ -228,21 +224,21 @@ ggpanel <- function(plots, orientation = "horizontal", legend.position = "bottom
   haveLegends <- 
     all(
       sapply(
-        lapply(plots, function(x) {ggplotGrob(x)$grobs}),
+        lapply(plots, function(x) {ggplot2::ggplotGrob(x)$grobs}),
         function(x){
           length(which(sapply(x, function(y) y$name) == "guide-box")) > 0}))
   
   plotGrobs <- 
     lapply(plots, 
-           function(x) {ggplotGrob(x + theme(legend.position = "none"))})
+           function(x) {ggplot2::ggplotGrob(x + ggplot2::theme(legend.position = "none"))})
   
   plotsPanel <- 
     if(orientation == "horizontal"){
-      arrangeGrob(do.call(eval(bindFunction), 
+      gridExtra::arrangeGrob(do.call(eval(bindFunction), 
                           plotGrobs))
     } else {
       if(length(unique(sapply(plotGrobs, length))) == 1){
-        arrangeGrob(
+        gridExtra::arrangeGrob(
           do.call(
             eval(bindFunction), 
             plotGrobs))
