@@ -2,22 +2,33 @@
 % Please edit documentation in R/ImportFunctions.R
 \name{read_dir}
 \alias{read_dir}
-\title{Read in a directory of files with identical data formats}
+\title{Read in a directory of files}
 \usage{
-read_dir(dir = getwd(), pattern = NULL, fun = readr::read_csv, ...)
+read_dir(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.csv,
+  ...)
 }
 \arguments{
-\item{dir}{A directory with only data files}
+\item{dir}{A directory that contains your data files, defaults to the working directory}
 
 \item{pattern}{A pattern to match filenames as in \code{\link[base]{list.files}}}
 
-\item{fun}{The function to use to read in the files, defaults to 
-\code{\link[readr]{read_csv}}}
+\item{collapse}{A logical argument, when true a single object is returned,
+when false an object is returned for each file}
 
-\item{...}{Additaional arguments to pass to the input method}
+\item{fun}{The function to use to read in the files, defaults to 
+\code{\link[base]{read.csv}}}
+
+\item{...}{Additional arguments to pass to the input method}
 }
 \description{
-This function reads in all files from a directory.  All files must have the same layout.
+This function reads in all files from a directory and stores them as
+individual objects or collapses them into a single object.  Use the 'pattern'
+argument to specificy a set of files, or a single file type.
+}
+\details{
+If collapse = TRUE then all files must have identical layouts. When collapse
+= F the data will automatically be assigned to objects, so no assignment is
+necessary.
 }
 \examples{
 read_dir()
