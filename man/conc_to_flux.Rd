@@ -14,6 +14,9 @@ over time}
 \item{chamber.volume.cm3}{The gas chamber volume in cm^3; can be a vector of 
 the same length as delta.ppm or a single numeric value}
 
+\item{collar.area.cm2}{The area of the chamber footprint in cm^2; can be a vector
+of the same length as delta.ppm or a single numeric value}
+
 \item{temperature.k}{The temperature within the chamber in Kelvin; can be a 
 vector of the same length as delta.ppm or a single numeric value}
 
@@ -26,9 +29,6 @@ vector of the same length as delta.ppm or a single numeric value}
 
 \item{C.only}{A logical specificying if the output flux should be calculated 
 for the gas species or for carbon only; defaults to FALSE}
-
-\item{collar.area}{The area of the chamber footprint in cm^2; can be a vector
-of the same length as delta.ppm or a single numeric value}
 
 \item{ouput.units}{The desired output flux units; 'g/m2h1', 'mg/m2h1', 
 'g/m2d1', or 'mg/m2d1'; defaults to 'g/m2h1'}

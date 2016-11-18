@@ -12,7 +12,7 @@
 #'   over time
 #' @param chamber.volume.cm3 The gas chamber volume in cm^3; can be a vector of 
 #'   the same length as delta.ppm or a single numeric value
-#' @param collar.area The area of the chamber footprint in cm^2; can be a vector
+#' @param collar.area.cm2 The area of the chamber footprint in cm^2; can be a vector
 #'   of the same length as delta.ppm or a single numeric value
 #' @param temperature.k The temperature within the chamber in Kelvin; can be a 
 #'   vector of the same length as delta.ppm or a single numeric value
@@ -58,7 +58,7 @@ conc_to_flux <-
     scalar <- ifelse(input.time == "seconds",
                      60*60,
                      60)
-    unitConversion <- read_csv({
+    unitConversion <- readr::read_csv({
       "unit, scaleFactor
       g/m2h1, 1
       mg/m2h1, 1000
