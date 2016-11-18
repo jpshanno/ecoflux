@@ -8,7 +8,7 @@
 #' 
 #' @return A vector giving flux of the gas species or of carbon in the selected 
 #'   output units
-#' @param delta.ppm A vector of slopes representing the change in concentration 
+#' @param delta.gas.ppm A vector of slopes representing the change in concentration 
 #'   over time
 #' @param chamber.volume.cm3 The gas chamber volume in cm^3; can be a vector of 
 #'   the same length as delta.ppm or a single numeric value
@@ -24,11 +24,12 @@
 #'   'g/m2d1', or 'mg/m2d1'; defaults to 'g/m2h1'
 #' @param C.only A logical specificying if the output flux should be calculated 
 #'   for the gas species or for carbon only; defaults to FALSE
+#' @param delta.ppm Deprecated, use delta.gas.ppm
 #' @export
 #' @rdname conc_to_flux
 
 conc_to_flux <- 
-  function(delta.ppm, 
+  function(delta.gas.ppm, 
            chamber.volume.cm3, 
            collar.area.cm2, 
            temperature.k, 
@@ -36,16 +37,29 @@ conc_to_flux <-
            species, 
            input.time, 
            output.units = "g/m2d1", 
-           C.only = FALSE){
-    if(!all(sapply(list(delta.ppm, chamber.volume.cm3, collar.area.cm2, temperature.k, pressure.Pa), is.numeric))){
-      stop("delta.ppm, chamber.volume, chamber.area, temperature, and pressure must be numeric vectors")
+           C.only = FALSE,
+           delta.ppm = NULL){
+    
+    if(!is.null(delta.ppm)){
+      if(!is.numeric(delta.ppm)){
+        stop("delta.ppm must be a numeric vector")
+      }
+      message("delta.ppm has been deprecated in favor of delta.gas.ppm")
+      delta.gas.ppm <- delta.ppm
     }
+    
+    if(!all(sapply(list(delta.gas.ppm, chamber.volume.cm3, collar.area.cm2, temperature.k, pressure.Pa), is.numeric))){
+      stop("chamber.volume, chamber.area, temperature, and pressure must be numeric vectors or single numeric values")
+    }
+    
     if(!(species %in% c("CO2", "CH4"))){
       stop("species must be specified as 'CO2' or 'CH4'")
     }
+    
     if(!(input.time %in% c("seconds", "minutes"))){
       stop("input.time must be specified as 'minutes' or 'seconds'")
     }
+    
     if(!(output.units %in% c("g/m2h1", "mg/m2h1", "g/m2d1", "mg/m2d1"))){
       stop("output.units must be specified as 'g/m2h1', 'mg/m2h1', 'g/m2d1', or 'mg/m2d1'")
     }
@@ -66,8 +80,8 @@ conc_to_flux <-
       mg/m2d1, 24000"
     })
     
-    delta_cm3 <- 
-      1e-6 * delta.ppm * chamber.volume.cm3
+    deltaGas_cm3 <- 
+      1e-6 * delta.gas.ppm * chamber.volume.cm3
     
     molarVolume_cm3_mol <- 
       gasConstant_cm3Pa_Kmol * 
@@ -77,14 +91,14 @@ conc_to_flux <-
     if(C.only){
       output_g_m2h1 <- 
         scalar * 
-        delta_cm3 * 
+        deltaGas_cm3 * 
         atomicWeightC_g_mol * 
         1/(0.0001 * collar.area.cm2) * 
         1/molarVolume_cm3_mol
     } else {
       output_g_m2h1 <- 
         scalar * 
-        delta_cm3 * 
+        deltaGas_cm3 * 
         molarMass_g_mol * 
         1/(0.0001 * collar.area.cm2) * 
         1/molarVolume_cm3_mol

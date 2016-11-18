@@ -4,11 +4,12 @@
 \alias{conc_to_flux}
 \title{Convert change in gas concentration over time to flux}
 \usage{
-conc_to_flux(delta.ppm, chamber.volume.cm3, collar.area.cm2, temperature.k,
-  pressure.Pa, species, input.time, output.units = "g/m2d1", C.only = FALSE)
+conc_to_flux(delta.gas.ppm, chamber.volume.cm3, collar.area.cm2, temperature.k,
+  pressure.Pa, species, input.time, output.units = "g/m2d1", C.only = FALSE,
+  delta.ppm = NULL)
 }
 \arguments{
-\item{delta.ppm}{A vector of slopes representing the change in concentration 
+\item{delta.gas.ppm}{A vector of slopes representing the change in concentration 
 over time}
 
 \item{chamber.volume.cm3}{The gas chamber volume in cm^3; can be a vector of 
@@ -29,6 +30,8 @@ vector of the same length as delta.ppm or a single numeric value}
 
 \item{C.only}{A logical specificying if the output flux should be calculated 
 for the gas species or for carbon only; defaults to FALSE}
+
+\item{delta.ppm}{Deprecated, use delta.gas.ppm}
 
 \item{ouput.units}{The desired output flux units; 'g/m2h1', 'mg/m2h1', 
 'g/m2d1', or 'mg/m2d1'; defaults to 'g/m2h1'}

@@ -20,15 +20,17 @@ when false an object is returned for each file}
 
 \item{...}{Additional arguments to pass to the input method}
 }
-\description{
-This function reads in all files from a directory and stores them as
-individual objects or collapses them into a single object.  Use the 'pattern'
-argument to specificy a set of files, or a single file type.
+\value{
+When \code{collapse = T} a single object matching the output class
+  of \code{fun} is returned. When \code{collapse = T} a list of objects
+  matching the output class of \code{fun} is returned with names corresponded
+  to the names of the imported files
 }
-\details{
-If collapse = TRUE then all files must have identical layouts. When collapse
-= F the data will automatically be assigned to objects, so no assignment is
-necessary.
+\description{
+This function reads in all files from a directory using the choosen import
+function.  Use the 'pattern' argument to specificy a set of files, or a
+single file type. If collapse = TRUE then all files must have identical
+layouts.
 }
 \examples{
 read_dir()
