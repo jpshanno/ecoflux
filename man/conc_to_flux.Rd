@@ -5,7 +5,7 @@
 \title{Convert change in gas concentration over time to flux}
 \usage{
 conc_to_flux(delta.gas.ppm, chamber.volume.cm3, collar.area.cm2, temperature.k,
-  pressure.Pa, species, input.time, output.units = "g/m2d1", C.only = FALSE,
+  pressure.pa, species, input.time, output.units = "g/m2d1", C.only = FALSE,
   delta.ppm = NULL)
 }
 \arguments{
@@ -21,10 +21,7 @@ of the same length as delta.ppm or a single numeric value}
 \item{temperature.k}{The temperature within the chamber in Kelvin; can be a 
 vector of the same length as delta.ppm or a single numeric value}
 
-\item{pressure.Pa}{The pressure within the chamber in Pascals;; can be a 
-vector of the same length as delta.ppm or a single numeric value}
-
-\item{species}{The gas species of interest; either 'CO2' or 'CH4'}
+\item{species}{The gas species of interest; 'CO2', 'CH4', or 'N2O'}
 
 \item{input.time}{The time scale for delta.ppm; either 'seconds' or 'minutes'}
 
@@ -32,6 +29,9 @@ vector of the same length as delta.ppm or a single numeric value}
 for the gas species or for carbon only; defaults to FALSE}
 
 \item{delta.ppm}{Deprecated, use delta.gas.ppm}
+
+\item{pressure.Pa}{The pressure within the chamber in Pascals;; can be a 
+vector of the same length as delta.ppm or a single numeric value}
 
 \item{ouput.units}{The desired output flux units; 'g/m2h1', 'mg/m2h1', 
 'g/m2d1', or 'mg/m2d1'; defaults to 'g/m2h1'}
