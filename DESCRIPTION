@@ -19,6 +19,5 @@ Imports:
     pander,
     readr,
     shiny,
-    shinyjs,
     tidyr
 
