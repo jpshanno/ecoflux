@@ -18,7 +18,7 @@
 #'   vector of the same length as delta.ppm or a single numeric value
 #' @param pressure.Pa The pressure within the chamber in Pascals;; can be a 
 #'   vector of the same length as delta.ppm or a single numeric value
-#' @param species The gas species of interest; either 'CO2' or 'CH4'
+#' @param species The gas species of interest; 'CO2', 'CH4', or 'N2O'
 #' @param input.time The time scale for delta.ppm; either 'seconds' or 'minutes'
 #' @param ouput.units The desired output flux units; 'g/m2h1', 'mg/m2h1', 
 #'   'g/m2d1', or 'mg/m2d1'; defaults to 'g/m2h1'
@@ -33,7 +33,7 @@ conc_to_flux <-
            chamber.volume.cm3, 
            collar.area.cm2, 
            temperature.k, 
-           pressure.Pa, 
+           pressure.pa, 
            species, 
            input.time, 
            output.units = "g/m2d1", 
@@ -52,8 +52,8 @@ conc_to_flux <-
       stop("chamber.volume, chamber.area, temperature, and pressure must be numeric vectors or single numeric values")
     }
     
-    if(!(species %in% c("CO2", "CH4"))){
-      stop("species must be specified as 'CO2' or 'CH4'")
+    if(!(species %in% c("CO2", "CH4", "N2O"))){
+      stop("species must be specified as 'CO2', 'CH4', or 'N2O'")
     }
     
     if(!(input.time %in% c("seconds", "minutes"))){
@@ -64,10 +64,22 @@ conc_to_flux <-
       stop("output.units must be specified as 'g/m2h1', 'mg/m2h1', 'g/m2d1', or 'mg/m2d1'")
     }
     
+    if(!(species %in% c("CO2", "CH4")) & C.only == TRUE){
+      stop("'C.only' can only be calculated if species is CO2 or CH4")
+    }
+    
+    
+    molarMasses <- 
+      readr::read_csv("speciesList, massList
+                        CO2, 44.01
+                        CH4, 16.04
+                        N2O, 44.013")
+    
     gasConstant_cm3Pa_Kmol <- 8314459.8
-    molarMass_g_mol <- ifelse(species == "CO2", 
-                              44.01, 
-                              16.04)
+    molarMass_g_mol <- 
+      molarMasses %>% 
+      filter(speciesList == species) %>% 
+      .[["mass"]]
     atomicWeightC_g_mol <- 12.011
     scalar <- ifelse(input.time == "seconds",
                      60*60,
@@ -86,7 +98,7 @@ conc_to_flux <-
     molarVolume_cm3_mol <- 
       gasConstant_cm3Pa_Kmol * 
       temperature.k *
-      1/pressure.Pa
+      1/pressure.pa
     
     if(C.only){
       output_g_m2h1 <- 
