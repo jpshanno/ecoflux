@@ -29,10 +29,10 @@ read_rdb <- function(file){
 #'
 #' This function reads in all files from a directory using the choosen import
 #' function.  Use the 'pattern' argument to specificy a set of files, or a
-#' single file type. If collapse = TRUE then all files must have identical
-#' layouts.
+#' single file type. If collapse = TRUE \code{\link[dplyr]{bind_rows}} is used
+#' to match column names and bind the imported data into a single object.
 #' @return  When \code{collapse = T} a single object matching the output class
-#'   of \code{fun} is returned. When \code{collapse = T} a list of objects
+#'   of \code{fun} is returned. When \code{collapse = F} a list of objects
 #'   matching the output class of \code{fun} is returned with names corresponded
 #'   to the names of the imported files
 #' @param dir A directory that contains your data files, defaults to the working directory
@@ -40,7 +40,7 @@ read_rdb <- function(file){
 #' @param fun The function to use to read in the files, defaults to 
 #' \code{\link[base]{read.csv}}
 #' @param collapse A logical argument, when true a single object is returned,
-#'   when false an object is returned for each file
+#'   when false an object is returned for each file. defaults to \code{TRUE}
 #' @param ... Additional arguments to pass to the input method
 #' @export
 #' @examples
@@ -64,18 +64,16 @@ read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.
                           pattern = pattern, 
                           full.names = T)
   nFiles <- length(fileslist)
+  import_list <- list()
+  
   for(i in 1:nFiles){
-    file.i <- fileslist[i]
-    import.i <- fun(file.i, ...)
-    if(collapse){
-      if(i != 1) {
-        import_list <- rbind(import_list, import.i)
-      } else {
-        import_list <- import.i}
-    } else {
-      if(i == 1) {import_list <- list()}
-      import_list[[basename(file.i)]] <- import.i
-    }
+    file.i <- basename(fileslist[i])
+    import_list[[basename(file.i)]] <- fun(file.i, ...)
   }
+  
+  if(collapse){
+    import_list <- dplyr::bind_rows(import_list)
+  }
+  
   return(import_list)
 }

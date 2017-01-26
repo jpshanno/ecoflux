@@ -13,7 +13,7 @@ read_dir(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.csv,
 \item{pattern}{A pattern to match filenames as in \code{\link[base]{list.files}}}
 
 \item{collapse}{A logical argument, when true a single object is returned,
-when false an object is returned for each file}
+when false an object is returned for each file. defaults to \code{TRUE}}
 
 \item{fun}{The function to use to read in the files, defaults to 
 \code{\link[base]{read.csv}}}
@@ -22,15 +22,15 @@ when false an object is returned for each file}
 }
 \value{
 When \code{collapse = T} a single object matching the output class
-  of \code{fun} is returned. When \code{collapse = T} a list of objects
+  of \code{fun} is returned. When \code{collapse = F} a list of objects
   matching the output class of \code{fun} is returned with names corresponded
   to the names of the imported files
 }
 \description{
 This function reads in all files from a directory using the choosen import
 function.  Use the 'pattern' argument to specificy a set of files, or a
-single file type. If collapse = TRUE then all files must have identical
-layouts.
+single file type. If collapse = TRUE \code{\link[dplyr]{bind_rows}} is used
+to match column names and bind the imported data into a single object.
 }
 \examples{
 read_dir()
