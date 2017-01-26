@@ -67,7 +67,7 @@ read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.
   import_list <- list()
   
   for(i in 1:nFiles){
-    file.i <- basename(fileslist[i])
+    file.i <- fileslist[i]
     import_list[[basename(file.i)]] <- fun(file.i, ...)
   }
   
