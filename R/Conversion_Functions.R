@@ -70,7 +70,7 @@ conc_to_flux <-
     
     
     molarMasses <- 
-      readr::read_csv("speciesList, massList
+      readr::read_csv("speciesList, mass
                         CO2, 44.01
                         CH4, 16.04
                         N2O, 44.013")
