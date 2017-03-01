@@ -77,3 +77,174 @@ read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.
   
   return(import_list)
 }
+
+
+# Read XLE ----------------------------------------------------------------
+
+#' Read in Solinst .xle levellogger and barologger files
+#' 
+#' Use \code{read_xle} to read in Solinst data from levelloggers and barologgers that are in the *.xle format without exporting the file to a csv. Use \code{read_and_convert_xle} to convert the stored values as they are read in.
+#'
+#' @param file A file in the .xle format
+#' @param conversions A list of character vectors of length 2, each consisting of the input unit and the desired unit using abbreviations from \code{\link[measurements]{conv_unit}}
+#'
+#' @return A dataframe containing project ID, site, coordinates, date of measurement ('yyyymmdd'), time of measurement ('HH:MM:SS'), and the data extracted from each channel in the logger. If a channel includes measurement parameters such as offset or altitude these are included in the dataframe.
+#' @export
+#' @rdname read_xle
+#' @examples
+#' read_and_convert_xle(file = "some_file.xle", 
+#'                      conversions = list(c("ft", "m"), 
+#'                                         c("F", "C")))
+read_xle <- 
+  function(file = NULL){
+    require(XML)
+    
+    testXML <- xmlParse(file, 
+                        encoding = "ISO-8859-1")
+    
+    # Extract header information from file, not currently used in reporting
+    xleFileInfo <- xmlToDataFrame(testXML["//Body_xle/File_info"],
+                                  stringsAsFactors = FALSE)
+    xleLoggerInfo <- xmlToDataFrame(testXML["//Body_xle/Instrument_info"],
+                                    stringsAsFactors = FALSE)
+    xleLoggerHeader <- xmlToDataFrame(testXML["//Body_xle/Instrument_info_data_header"],
+                                      stringsAsFactors = FALSE)
+    
+    # Extract information about chanels and format column names
+    channelNames <- 
+      sapply(
+        testXML["//Body_xle/*[starts-with(name(), 'Ch')]"],
+        function(x){
+          # Extract channel ID and strip trailing whitespace that was found in some files
+          id <- gsub("[[:blank:]+$]", "",xmlValue(x["Identification"]$Identification))
+          # Extract channel unit and replace '/' with _
+          unit <- gsub("\\/", "_", xmlValue(x["Unit"]$Unit))
+          # Combine channel ID and unit into a single standardized name
+          channelName <- tolower(
+            paste0(
+              id,
+              "_",
+              ifelse(id == "TEMPERATURE",
+                     substr(unit, 
+                            nchar(unit), 
+                            nchar(unit)),
+                     unit)
+            )
+          )
+          channelName <- gsub("[[:blank:]]", "_", channelName)
+          return(channelName)
+        }
+      )
+    
+    # Combine header data and logged data into a single dataframe.
+    xleData <- 
+      as.data.frame(
+        list(
+          xleLoggerHeader$Project_ID,
+          xleLoggerHeader$Location,
+          paste(xleLoggerHeader$Latitude, xleLoggerHeader$Latitude, sep = ", "),
+          sapply(testXML["//Body_xle/Data/Log/Date"],
+                 function(x){gsub("/", "", xmlValue(x))}),
+          sapply(testXML["//Body_xle/Data/Log/Time"],
+                 xmlValue),
+          sapply(testXML["//Body_xle/Data/Log/ch1"],
+                 function(x){as.numeric(xmlValue(x))}),
+          sapply(testXML["//Body_xle/Data/Log/ch2"],
+                 function(x){as.numeric(xmlValue(x))})
+        ),
+        col.names = c("projectID",
+                      "site",
+                      "coordinates",
+                      "date_yyyymmdd",
+                      "time_hhmmss",
+                      channelNames),
+        stringsAsFactors = FALSE
+      )
+    
+    # Extract any parameter information embedded in each channel
+    params <- 
+      lapply(
+        testXML["//Body_xle/*/Parameters"],
+        xmlToList
+      )
+    
+    if(!is.null(params)){
+      
+      # Name each list of parameters with the channel names
+      names(params) <- channelNames
+      
+      # Remove information about channels that do not contain any parameters
+      params <- params[!sapply(params, is.null)]
+      
+      # Extract the values from each parameter
+      paramValues <- 
+        rapply(
+          params,
+          function(x){as.numeric(x[["Val"]])}
+        )
+      
+      # Assign each parameter a name of the form channel_parameter_unit
+      names(paramValues) <- 
+        unlist(
+          lapply(
+            seq_along(params),
+            function(x){
+              gsub("[[:blank:]]", "_",
+                   tolower(
+                     paste0(
+                       gsub("_.*", "", names(params)[x]),
+                       "_",
+                       names(params[[x]]),
+                       "_",
+                       sapply(params[[x]], function(y){gsub("\\/", "_", y["Unit"])})
+                     )
+                   )
+              )
+            })
+        )
+      
+      # Add the parameter information to the return dataframe
+      for(i in 1:length(paramValues)){
+        xleData[, names(paramValues)[i]] <- paramValues[i]}
+    }
+    
+    return(xleData)
+  }
+
+#' @export
+#' @rdname read_xle
+read_and_convert_xle <- 
+  function(x, conversions = NULL){
+    require(measurements)
+    DATA <- read_xle(x)
+    
+    lapply(conversions, 
+           function(x){
+             oldUnit <- 
+               paste0("_", x[1], "$")
+             newUnit <- 
+               paste0("_", x[2])
+             oldIndex <- 
+               grep(oldUnit, names(DATA))
+             if(length(oldIndex)==0){message(paste0("No columns with unit '",
+                                                    x[1],
+                                                    "' were found."))}
+             newNames <- 
+               gsub(oldUnit, newUnit, names(DATA)[oldIndex])
+             names(DATA)[oldIndex] <<- 
+               newNames
+             DATA[,newNames] <<- 
+               tryCatch(conv_unit(DATA[,newNames], x[1], x[2]),
+                        stop(
+                          simpleError(
+                            paste0("Unit conversion failed for unit '",
+                                   x[1],
+                                   "'. Check that '",
+                                   x[1],
+                                   "' and '",
+                                   x[2],
+                                   "' match the available units in ?messsages::conv_unit"))))
+           })
+    
+    return(DATA)
+  }

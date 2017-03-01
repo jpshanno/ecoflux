@@ -15,9 +15,11 @@ Imports:
     ggplot2,
     grid,
     gridExtra,
+    measurements,
     miniUI,
     pander,
     readr,
     shiny,
-    tidyr
+    tidyr,
+    XML
 
