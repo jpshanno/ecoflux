@@ -4,19 +4,29 @@
 \alias{pataki_flow}
 \title{Calculate sap flow for a tree with sapwood depth greater than probe length}
 \usage{
-pataki_flow(Flux, Sapwood_Area, DBH, Type)
+pataki_flow(sap.flux, sapwood.area, dbh, tree.type)
 }
 \arguments{
-\item{Flux}{Sap flux data (m3m-2d-1)}
+\item{sap.flux}{Sap flux data as volume per unit area per unit time}
 
-\item{Sapwood_Area}{Sapwood area of the tree (m2)}
+\item{sapwood.area}{Sapwood area of the tree in units matching
+\code{sap.flux} area unit}
 
-\item{Diameter}{of the tree at breast height (m2)}
+\item{dbh}{Diameter of the tree at breast height in units matching the square
+root of the \code{sap.flux} area unit}
 
-\item{Type:}{'Softwood' or 'Hardwood'}
+\item{tree.type}{is a character of 'Softwood' or 'Hardwood'}
+}
+\value{
+Sap flow of the stem given as volume per unit time matching the units
+  in \code{sap.flux}
 }
 \description{
-This function uses the equations laid out in Pataki et al, 2011.
+This function uses the equations laid out in Pataki et al, 2011 to calculate
+the total sap flow of a tree from sap flux measurements in the outer sapwood.
+It assumes a 2 cm long sap-flux probe and silently considers the total stem
+area to be sapwood area if the sapwood area is greater than the area of the
+tree caluclated form the dbh argument.
 }
 \examples{
 pataki_flow()
