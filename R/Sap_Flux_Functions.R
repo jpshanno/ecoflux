@@ -4,72 +4,57 @@
 #' the total sap flow of a tree from sap flux measurements in the outer sapwood.
 #' It assumes a 2 cm long sap-flux probe and silently considers the total stem
 #' area to be sapwood area if the sapwood area is greater than the area of the
-#' tree caluclated form the dbh argument.
+#' tree caluclated form the diameter argument.
 #' @return Sap flow of the stem given as volume per unit time matching the units
 #'   in \code{sap.flux}.
 #' @param sap.flux Sap flux data as volume per unit area per unit time
 #' @param sapwood.area Sapwood area of the tree in units matching
 #'   \code{sap.flux} area unit
-#' @param dbh Diameter of the tree at breast height in units matching the square
+#' @param diameter Diameter of the tree in units matching the square
 #'   root of the \code{sap.flux} area unit
 #' @param tree.type is a character of 'Softwood' or 'Hardwood'
 #' @keywords Sap flux
 #' @export
 #' @examples
 #' pataki_flow()
-pataki_flow <- function (sap.flux, sapwood.area, dbh, tree.type) {
+pataki_flow <- function (sap.flux, sapwood.area, diameter, tree.type) {
   
-  df <- data.frame(sapFlux = sap.flux,
-                   sapwoodArea = sapwood.area,
-                   diameter = dbh,
-                   type = tree.type)
+  softwood_flux <- 
+    function(x){
+      1.257 * exp(-0.5 * ((x + 0.3724) / 0.662) ^ 2)}
+  hardwood_flux <- 
+    function(x){
+      1.033 * exp(-0.5 * ((x - 0.09963) / 0.4263) ^ 2)}  
   
-  pataki_decline <- function(sapFlux,
-                             sapwoodRadius,
-                             treeRadius,
-                             diameter,
-                             type){
-    
-    nRings <- sapwoodRadius / 0.02
-    nFullRings <- ceiling(sapwoodRadius / 0.02)
-    sizeLastRing <- 1 - (nFullRings - nRings)
-    ringFlow <- numeric(nRings)
-    
-    for (X in 1:nFullRings) {
-      outerRingRadius <- treeRadius - ((X * 0.02) - 0.02)
-      innerRingRadius <- treeRadius - (X * 0.02)
-      relativeDepth <- ((X * 0.02) - 0.02) / sapwoodRadius
-      JiJo <- ifelse(type=="Softwood",
-                     1.257 * exp(-0.5 * ((relativeDepth + 0.3724) / 0.662) ^ 2),
-                     1.033 * exp(-0.5 * ((relativeDepth - 0.09963) / 0.4263) ^ 2))
-      ringArea <- Circular(outerRingRadius) - Circular(innerRingRadius)
-      ringFlow[X] <- ifelse(X != nFullRings,
-                            sapFlux * JiJo * ringArea,
-                            ifelse(nRings == nFullRings,
-                                   sapFlux * JiJo * ringArea,
-                                   sapFlux * JiJo * ringArea * sizeLastRing))}
-    return(sum(ringFlow))
-  }
+  fluxScalar <- 
+    ifelse(tree.type == "Softwood",
+           integrate(softwood_flux, 
+                     lower = 0,
+                     upper = 1),
+           integrate(hardwood_flux, 
+                     lower = 0,
+                     upper = 1))
   
-  df <-
-    df %>%
-    rowwise() %>%
-    mutate(
-      treeRadius = diameter/2,
-      treeArea = pi*treeRadius^2,
-      heartArea = ifelse(sapwoodArea < treeArea,
-                         treeArea - sapwoodArea,
-                         0),
-      heartRadius = sqrt(heartArea/pi),
-      sapwoodRadius = treeRadius - heartRadius,
-      flow = pataki_decline(sapFlux,
-                            sapwoodRadius,
-                            treeRadius,
-                            diameter,
-                            type)
-    )
+  treeRadius <-  
+    diameter/2
   
-  return(df$flow)
+  treeArea <- 
+    pi * treeRadius^2
+  
+  heartRadius <- 
+    ifelse(sapwood.area < treeArea, 
+           sqrt(treeArea - sapwood.area/pi), 
+           0)
+  
+  sapwoodRadius <-  
+    treeRadius - heartRadius
+
+  flow <- 
+    ifelse(sapwoodRadius > 0.02,
+           flux_m3_m2d * saparea_m2 * fluxScalar,
+           flux_m3_m2d * saparea_m2)
+  
+  return(flow)
 }
 
 #' Calculate sap flow for a tree with sapwood depth greater than probe length
