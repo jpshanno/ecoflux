@@ -53,7 +53,7 @@ pataki_flow <- function (sap.flux, sapwood.area, diameter, tree.type) {
     ifelse(sapwoodRadius > 0.02,
            sap.flux * sapwood.area * fluxScalar,
            sap.flux * sapwood.area)
-  
+
   return(flow)
 }
 
