@@ -30,10 +30,10 @@ pataki_flow <- function (sap.flux, sapwood.area, diameter, tree.type) {
     ifelse(tree.type == "Softwood",
            integrate(softwood_flux, 
                      lower = 0,
-                     upper = 1),
+                     upper = 1)$value,
            integrate(hardwood_flux, 
                      lower = 0,
-                     upper = 1))
+                     upper = 1)$value)
   
   treeRadius <-  
     diameter/2
