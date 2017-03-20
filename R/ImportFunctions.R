@@ -215,35 +215,30 @@ read_xle <-
 #' @rdname read_xle
 read_and_convert_xle <- 
   function(x, conversions = NULL){
-    require(measurements)
+    
+    if(!all(unlist(conversions) %in% unlist(measurements::conv_unit_options))){
+      stop("Unit conversions failed. Check that all listed units match the available units in ?measurements::conv_unit") 
+    }
+
     DATA <- read_xle(x)
     
     lapply(conversions, 
-           function(x){
+           function(X){
              oldUnit <- 
-               paste0("_", x[1], "$")
+               paste0("_", X[1], "$")
              newUnit <- 
-               paste0("_", x[2])
+               paste0("_", X[2])
              oldIndex <- 
                grep(oldUnit, names(DATA))
              if(length(oldIndex)==0){message(paste0("No columns with unit '",
-                                                    x[1],
+                                                    X[1],
                                                     "' were found."))}
+             DATA[,oldIndex] <<- 
+               measurements::conv_unit(DATA[,oldIndex], X[1], X[2])
              newNames <- 
                gsub(oldUnit, newUnit, names(DATA)[oldIndex])
              names(DATA)[oldIndex] <<- 
                newNames
-             DATA[,newNames] <<- 
-               tryCatch(conv_unit(DATA[,newNames], x[1], x[2]),
-                        stop(
-                          simpleError(
-                            paste0("Unit conversion failed for unit '",
-                                   x[1],
-                                   "'. Check that '",
-                                   x[1],
-                                   "' and '",
-                                   x[2],
-                                   "' match the available units in ?messsages::conv_unit"))))
            })
     
     return(DATA)
