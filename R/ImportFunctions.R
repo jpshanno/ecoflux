@@ -73,9 +73,13 @@ read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.
   
   if(collapse){
     import_list <- dplyr::bind_rows(import_list)
+    return(import_list)
+  } else {
+    lapply(seq_along(import_list),
+           function(x){
+             assign(names(import_list)[x], import_list[[x]], envir = .GlobalEnv)
+           })
   }
-  
-  return(import_list)
 }
 
 

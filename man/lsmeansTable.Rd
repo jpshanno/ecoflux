@@ -27,4 +27,3 @@ the names of the list object.
 Creates a data frame from a list of lsmobj results generated from a looped 
 call involving lsmeans or lstrends.
 }
-

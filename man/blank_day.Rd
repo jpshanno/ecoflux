@@ -16,4 +16,3 @@ blank_day(timestep = NULL)
 blank_day()
 }
 \keyword{ITime}
-

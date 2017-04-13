@@ -17,4 +17,3 @@ downloads and does not import data from a url
 \examples{
 read_rdb()
 }
-

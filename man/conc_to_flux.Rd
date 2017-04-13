@@ -46,4 +46,3 @@ within a sample chamber to flux rates for the gas species or for carbon.
 Conversion uses the ideal gas law to determine the convert the change in
 concentration to the change in mass.
 }
-

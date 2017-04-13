@@ -25,4 +25,3 @@ steps, based on the interval length choosen.
 \examples{
 time_seq("2016-11-01", "2016-11-03", step = 15, units = "minutes")
 }
-

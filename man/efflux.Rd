@@ -43,4 +43,3 @@ for example datasets
 \examples{
 efflux()
 }
-

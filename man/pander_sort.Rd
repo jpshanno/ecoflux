@@ -29,4 +29,3 @@ pander::pander(x[order(x$fruit),])
 ## Sorting and fixing row names:
 pander_sort(x, fruit)
 }
-

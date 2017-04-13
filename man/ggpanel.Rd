@@ -70,4 +70,3 @@ ggpanel(list(plot1, plot2),
         orientation = "vertical", 
         legend.position = "right")
 }
-

@@ -19,4 +19,3 @@ SEy()
 }
 \keyword{error}
 \keyword{standard}
-

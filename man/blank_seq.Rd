@@ -22,4 +22,3 @@ a specified range of days with a given time step
 \examples{
 blank_seq()
 }
-

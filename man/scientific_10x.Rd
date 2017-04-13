@@ -44,4 +44,3 @@ ggplot2::qplot(x, y) +
                               labels = scientific_10x(y, digits = 2))
 
 }
-

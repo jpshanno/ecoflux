@@ -35,4 +35,3 @@ to match column names and bind the imported data into a single object.
 \examples{
 read_dir()
 }
-
