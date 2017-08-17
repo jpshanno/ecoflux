@@ -6,9 +6,9 @@ The main purpose of this package is to provide tools to process ecological fluxe
 This package is only available via GitHub. To install run the following lines <code>install.packages('devtools'); devtools::install_github('jpshanno/ecoflux')</code>  
 
 ## Gas Flux   
-The function efflux() provides an interactive way to clean data and fit a regression. It is especially useful for soil gas flux measurements from manual syringe sampling or automated systems such as the PP Systems EGM-4. It can be demoed with a sample data set <a href=http://apps.streamlinedecology.com/efflux>here</a>.  
+The function <code>efflux</code> provides an interactive way to clean data and fit a regression. It is especially useful for soil gas flux measurements from manual syringe sampling or automated systems such as the PP Systems EGM-4. It can be demoed with a sample data set <a href=http://apps.streamlinedecology.com/efflux>here</a>.  
   
-The function conc_to_flux allows for easy conversion from change in chamber concentration to gas or carbon flux from the soil or stem surface.
+The function <code>conc_to_flux</code> allows for easy conversion from change in chamber concentration to gas or carbon flux from the soil or stem surface.
 
 ## Sap Flux  
 The methods laid out in Pataki (2011) for scaling sap flux to whole-tree sap flow when the sapwood depth extends beyond the length of the sap-flux probe is available in <code>pataki_flow</code>.
