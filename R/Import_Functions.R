@@ -46,7 +46,7 @@ read_rdb <- function(file){
 #' @examples
 #' read_dir()
 
-read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.csv, ...){
+read_dir <- function(dir = getwd(), pattern = "*", collapse = TRUE, fun = read.csv, ...){
   
   if(!all(sapply(list(dir, pattern), is.character))){
     stop("dir and pattern must be character vectors.")
@@ -68,11 +68,13 @@ read_dir <- function(dir = getwd(), pattern = NULL, collapse = TRUE, fun = read.
   
   for(i in 1:nFiles){
     file.i <- fileslist[i]
-    import_list[[basename(file.i)]] <- fun(file.i, ...)
+    import_list[[basename(file.i)]] <- try(fun(file.i, ...))
   }
   
+  import_list <- import_list[which(sapply(import_list, function(x){class(x) != "try-error"}))]
+  
   if(collapse){
-    import_list <- dplyr::bind_rows(import_list)
+    import_list <- dplyr::bind_rows(import_list, .id = "sourceFile")
     return(import_list)
   } else {
     lapply(seq_along(import_list),
@@ -139,6 +141,14 @@ read_xle <-
           return(channelName)
         }
       )
+    
+    # Check to see if the file contains any data
+    if(length(testXML["//Body_xle/Data/Log"]) == 0){
+      stop(paste0("The file ",
+                  file,
+                  " is apparently empty"))
+    }
+    
     
     # Combine header data and logged data into a single dataframe.
     xleData <- 
