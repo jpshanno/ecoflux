@@ -27,26 +27,30 @@ read_rdb <- function(file){
 # Read directory ----------------------------------------------------------------
 #' Read in a directory of files
 #'
-#' This function reads in all files from a directory using the choosen import
-#' function.  Use the 'pattern' argument to specificy a set of files, or a
-#' single file type. If collapse = TRUE \code{\link[dplyr]{bind_rows}} is used
+#' This function reads in all files from a directory using the choosen import 
+#' function.  Use the 'pattern' argument to specificy a set of files, or a 
+#' single file type. If collapse = TRUE \code{\link[dplyr]{bind_rows}} is used 
 #' to match column names and bind the imported data into a single object.
-#' @return  When \code{collapse = T} a single object matching the output class
-#'   of \code{fun} is returned. When \code{collapse = F} a list of objects
+#' @return  When \code{collapse = T} a single object matching the output class 
+#'   of \code{fun} is returned. When \code{collapse = F} a list of objects 
 #'   matching the output class of \code{fun} is returned with names corresponded
 #'   to the names of the imported files
-#' @param dir A directory that contains your data files, defaults to the working directory
-#' @param pattern A pattern to match filenames as in \code{\link[base]{list.files}}
+#' @param dir A directory that contains your data files, defaults to the working
+#'   directory
+#' @param pattern A pattern to match filenames as in
+#'   \code{\link[base]{list.files}}
+#' @param collapse A logical argument, when true a single object is returned, 
+#'   when false an object is returned for each file, defaults to \code{TRUE}
 #' @param fun The function to use to read in the files, defaults to 
-#' \code{\link[base]{read.csv}}
-#' @param collapse A logical argument, when true a single object is returned,
-#'   when false an object is returned for each file. defaults to \code{TRUE}
+#'   \code{\link[base]{read.csv}}
+#' @param recursive A logical argument, when true files are read recursively, 
+#'   defaults to \code{TRUE}. See \code{\link[base]{list.files}}
 #' @param ... Additional arguments to pass to the input method
 #' @export
 #' @examples
 #' read_dir()
 
-read_dir <- function(dir = getwd(), pattern = "*", collapse = TRUE, fun = read.csv, ...){
+read_dir <- function(dir = getwd(), pattern = "*", collapse = TRUE, recursive = FALSE, fun = read.csv, ...){
   
   if(!all(sapply(list(dir, pattern), is.character))){
     stop("dir and pattern must be character vectors.")
@@ -62,7 +66,8 @@ read_dir <- function(dir = getwd(), pattern = "*", collapse = TRUE, fun = read.c
   
   fileslist <- list.files(dir, 
                           pattern = pattern, 
-                          full.names = T)
+                          full.names = T, 
+                          recursive = recursive)
   nFiles <- length(fileslist)
   import_list <- list()
   
