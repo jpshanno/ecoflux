@@ -1,6 +1,6 @@
 Package: ecoflux
 Title: Functions for ecological flux studies including sap flux and soil/stem C efflux.
-Version: 0.3
+Version: 0.3.1
 Authors@R: person("Joe", "Shannon", email = "josephshannon@outlook.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
 Depends:
@@ -8,7 +8,7 @@ Depends:
 License: What license is it under?
 LazyData: true
 RoxygenNote: 6.0.1
-Imports: 
+Imports:
     data.table,
     dplyr,
     DT,
