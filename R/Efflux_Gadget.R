@@ -340,7 +340,7 @@ efflux <- function(input.data = NULL, run = TRUE){
     # Jump to selected sample
     shiny::observeEvent(input$ID,{
       sample$name <- input$ID
-      sample$index <- grep(sample$name, IDs$all)
+      sample$index <- grep(paste0("^",sample$name, "$"), IDs$all)
     })
     
     # Runs when you press Save & Next

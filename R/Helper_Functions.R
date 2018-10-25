@@ -218,8 +218,8 @@ ggpanel <- function(plots, orientation = "horizontal", legend.position = "bottom
                              ggplot2::theme(legend.direction = legendOrientation))$grobs
   
   bindFunction <- ifelse(orientation == "horizontal",
-                         quote(gtable_cbind),
-                         quote(gtable_rbind))
+                         quote(gridExtra::gtable_cbind),
+                         quote(gridExtra::gtable_rbind))
   
   haveLegends <- 
     all(
